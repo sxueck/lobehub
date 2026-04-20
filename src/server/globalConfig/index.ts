@@ -1,5 +1,6 @@
 import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 
+import { getServerFeatureFlagsValue } from '@/config/featureFlags';
 import { klavisEnv } from '@/config/klavis';
 import { isDesktop } from '@/const/version';
 import { appEnv, getAppConfig } from '@/envs/app';
@@ -28,6 +29,7 @@ const getBetterAuthSSOProviders = () => {
 
 export const getServerGlobalConfig = async () => {
   const { DEFAULT_AGENT_CONFIG } = getAppConfig();
+  const featureFlags = getServerFeatureFlagsValue();
 
   const config: GlobalServerConfig = {
     aiProvider: await genServerAiProvidersConfig({
@@ -44,10 +46,12 @@ export const getServerGlobalConfig = async () => {
       },
       bedrock: {
         enabledKey: 'ENABLED_AWS_BEDROCK',
+        envVarPrefix: 'AWS',
         modelListKey: 'AWS_BEDROCK_MODEL_LIST',
       },
       giteeai: {
         enabledKey: 'ENABLED_GITEE_AI',
+        envVarPrefix: 'GITEE_AI',
         modelListKey: 'GITEE_AI_MODEL_LIST',
       },
       lmstudio: {
@@ -59,18 +63,22 @@ export const getServerGlobalConfig = async () => {
       },
       ollamacloud: {
         enabledKey: 'ENABLED_OLLAMA_CLOUD',
+        envVarPrefix: 'OLLAMA_CLOUD',
       },
       qwen: {
         withDeploymentName: true,
       },
       tencentcloud: {
         enabledKey: 'ENABLED_TENCENT_CLOUD',
+        envVarPrefix: 'TENCENT_CLOUD',
         modelListKey: 'TENCENT_CLOUD_MODEL_LIST',
       },
       volcengine: {
         withDeploymentName: true,
       },
-    }),
+      },
+      { restrictToConfiguredProviders: featureFlags.provider_settings === false },
+    ),
     defaultAgent: {
       config: parseAgentConfig(DEFAULT_AGENT_CONFIG),
     },
