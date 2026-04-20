@@ -1,15 +1,18 @@
-import { Brain, BrainCircuit, Info, Settings2, Sparkles } from 'lucide-react';
+import { Brain, BrainCircuit, Info, Settings2, ShieldUser, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { type CellProps } from '@/components/Cell';
 import { SettingsTabs } from '@/store/global/initialState';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
+import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/selectors';
 
 export const useCategory = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('setting');
   const { showProvider } = useServerConfigStore(featureFlagsSelectors);
+  const isAdmin = useUserStore(userProfileSelectors.isAdmin);
 
   const items: CellProps[] = [
     {
@@ -31,6 +34,11 @@ export const useCategory = () => {
       icon: BrainCircuit,
       key: SettingsTabs.Memory,
       label: t('tab.memory'),
+    },
+    isAdmin && {
+      icon: ShieldUser,
+      key: SettingsTabs.Admin,
+      label: t('tab.admin'),
     },
     {
       icon: Info,

@@ -125,6 +125,7 @@ export class CommonActionImpl {
                     firstName: data.firstName,
                     fullName: data.fullName,
                     id: data.userId,
+                    isAdmin: data.isAdmin,
                     interests: data.interests,
                     latestName: data.lastName,
                     username: data.username,

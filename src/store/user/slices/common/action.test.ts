@@ -73,6 +73,7 @@ describe('createCommonSlice', () => {
     it('should fetch user state correctly when user is login', async () => {
       const mockUserState: UserInitializationState = {
         userId: 'user-id',
+        isAdmin: true,
         isOnboard: true,
         preference: {
           telemetry: true,
@@ -109,6 +110,7 @@ describe('createCommonSlice', () => {
         }),
       );
       expect(useUserStore.getState().user?.email).toEqual(mockUserState.email);
+      expect(useUserStore.getState().user?.isAdmin).toBe(true);
       expect(successCallback).toHaveBeenCalledWith(mockUserState);
     });
 

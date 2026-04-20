@@ -7,6 +7,8 @@ import NavHeader from '@/features/NavHeader';
 import SettingContainer from '@/features/Setting/SettingContainer';
 import { SettingsTabs } from '@/store/global/initialState';
 import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
+import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/selectors';
 
 import { componentMap } from './componentMap';
 
@@ -25,13 +27,21 @@ interface SettingsContentProps {
 
 const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
+  const isAdmin = useUserStore(userProfileSelectors.isAdmin);
+  const isUserStateInit = useUserStore((s) => s.isUserStateInit);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (activeTab && REDIRECT_MAP[activeTab]) {
       navigate(`/settings/${REDIRECT_MAP[activeTab]}`, { replace: true });
     }
-  }, [activeTab, navigate]);
+
+    if (!isUserStateInit) return;
+
+    if (activeTab === SettingsTabs.Admin && !isAdmin) {
+      navigate(`/settings/${SettingsTabs.Profile}`, { replace: true });
+    }
+  }, [activeTab, isAdmin, isUserStateInit, navigate]);
 
   const renderComponent = (tab: string) => {
     const Component = componentMap[tab as keyof typeof componentMap] || componentMap.appearance;
@@ -44,6 +54,7 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
         SettingsTabs.ServiceModel,
         SettingsTabs.Provider,
         SettingsTabs.Profile,
+        SettingsTabs.Admin,
         SettingsTabs.Stats,
         SettingsTabs.Usage,
         SettingsTabs.Security,
@@ -59,6 +70,8 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
   };
 
   if (activeTab && REDIRECT_MAP[activeTab]) return null;
+  if (activeTab === SettingsTabs.Admin && !isUserStateInit) return null;
+  if (activeTab === SettingsTabs.Admin && !isAdmin) return null;
 
   if (mobile) {
     return activeTab ? renderComponent(activeTab) : renderComponent(SettingsTabs.Profile);
