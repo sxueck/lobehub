@@ -59,6 +59,7 @@ vi.mock('../_layout/AuthServerConfigProvider', () => ({
     selector({
       serverConfig: {
         disableEmailPassword: false,
+        disableEmailPasswordSignUp: false,
         enableMagicLink: false,
         oAuthSSOProviders: ['google', 'github'],
       },
