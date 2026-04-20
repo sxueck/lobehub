@@ -66,5 +66,21 @@ describe('AiInfraRepos', () => {
         source: 'builtin',
       });
     });
+
+    it('should preserve server managed enabled state in detail', async () => {
+      repo = new AiInfraRepos(serverDB, userId, {
+        anthropic: { enabled: false, serverManaged: true },
+      });
+
+      vi.spyOn(repo.aiProviderModel, 'getAiProviderById').mockResolvedValue({
+        enabled: true,
+        id: 'anthropic',
+        source: 'builtin',
+      } as AiProviderDetailItem);
+
+      const result = await repo.getAiProviderDetail('anthropic');
+
+      expect(result.enabled).toBe(false);
+    });
   });
 });
