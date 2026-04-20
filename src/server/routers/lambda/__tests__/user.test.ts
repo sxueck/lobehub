@@ -5,18 +5,35 @@ import { MessageModel } from '@/database/models/message';
 import { SessionModel } from '@/database/models/session';
 import { UserModel } from '@/database/models/user';
 import { serverDB } from '@/database/server';
+import { isAuthAdminUser } from '@/envs/auth';
 import { KeyVaultsGateKeeper } from '@/server/modules/KeyVaultsEncrypt';
 
 import { userRouter } from '../user';
+
+const ilikeMock = vi.hoisted(() => vi.fn((column, pattern) => ({ column, pattern })));
+const orMock = vi.hoisted(() => vi.fn((...conditions) => conditions));
 
 // Mock modules
 vi.mock('@/database/server', () => ({
   serverDB: {},
 }));
 
+vi.mock('drizzle-orm', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('drizzle-orm')>();
+
+  return {
+    ...actual,
+    ilike: ilikeMock,
+    or: orMock,
+  };
+});
+
 vi.mock('@/database/models/message');
 vi.mock('@/database/models/session');
 vi.mock('@/database/models/user');
+vi.mock('@/envs/auth', () => ({
+  isAuthAdminUser: vi.fn(),
+}));
 vi.mock('@/server/modules/KeyVaultsEncrypt');
 vi.mock('@/server/modules/S3');
 vi.mock('@/server/services/user');
@@ -29,6 +46,7 @@ describe('userRouter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isAuthAdminUser).mockImplementation((userId) => userId === mockUserId);
   });
 
   describe('getUserRegistrationDuration', () => {
@@ -106,6 +124,7 @@ describe('userRouter', () => {
       const result = await userRouter.createCaller({ ...mockCtx }).getUserState();
 
       expect(result).toMatchObject({
+        isAdmin: true,
         isOnboard: true,
         preference: { telemetry: true },
         settings: {},
@@ -113,6 +132,99 @@ describe('userRouter', () => {
         canEnablePWAGuide: true,
         canEnableTrace: true,
         userId: mockUserId,
+      });
+    });
+  });
+
+  describe('queryAdminUsers', () => {
+    it('should return paginated users for admin', async () => {
+      const mockUsers = [
+        {
+          avatar: null,
+          createdAt: new Date('2024-01-01T00:00:00.000Z'),
+          email: 'alice@example.com',
+          fullName: 'Alice',
+          id: 'user-2',
+          lastActiveAt: new Date('2024-01-03T00:00:00.000Z'),
+          username: 'alice',
+        },
+      ];
+
+      Object.assign(serverDB as any, {
+        query: {
+          users: {
+            findMany: vi.fn().mockResolvedValue(mockUsers),
+          },
+        },
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ count: 1 }]),
+          }),
+        }),
+      });
+
+      const result = await userRouter.createCaller({ ...mockCtx }).queryAdminUsers({
+        keyword: 'alice',
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result).toEqual({
+        total: 1,
+        users: [
+          {
+            avatar: null,
+            createdAt: new Date('2024-01-01T00:00:00.000Z'),
+            email: 'alice@example.com',
+            fullName: 'Alice',
+            id: 'user-2',
+            isAdmin: false,
+            lastActiveAt: new Date('2024-01-03T00:00:00.000Z'),
+            username: 'alice',
+          },
+        ],
+      });
+
+      expect(ilikeMock).toHaveBeenNthCalledWith(1, expect.anything(), '%alice%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(2, expect.anything(), '%alice%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(3, expect.anything(), '%alice%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(4, expect.anything(), '%alice%');
+    });
+
+    it('should escape wildcard characters in keyword search', async () => {
+      Object.assign(serverDB as any, {
+        query: {
+          users: {
+            findMany: vi.fn().mockResolvedValue([]),
+          },
+        },
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ count: 0 }]),
+          }),
+        }),
+      });
+
+      await userRouter.createCaller({ ...mockCtx }).queryAdminUsers({
+        keyword: 'user_100%',
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(ilikeMock).toHaveBeenNthCalledWith(1, expect.anything(), '%user\\_100\\%%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(2, expect.anything(), '%user\\_100\\%%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(3, expect.anything(), '%user\\_100\\%%');
+      expect(ilikeMock).toHaveBeenNthCalledWith(4, expect.anything(), '%user\\_100\\%%');
+    });
+
+    it('should reject non-admin callers', async () => {
+      vi.mocked(isAuthAdminUser).mockReturnValue(false);
+
+      await expect(
+        userRouter.createCaller({ ...mockCtx }).queryAdminUsers({ page: 1, pageSize: 20 }),
+      ).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        message: 'ADMIN_ONLY',
       });
     });
   });

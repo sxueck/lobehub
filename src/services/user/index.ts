@@ -3,6 +3,7 @@ import { type PartialDeep } from 'type-fest';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import {
+  type AdminUserListResponse,
   type SaveUserQuestionInput,
   type SSOProvider,
   type UserAgentOnboarding,
@@ -25,6 +26,14 @@ export class UserService {
 
   getUserState = async (): Promise<UserInitializationState> => {
     return lambdaClient.user.getUserState.query();
+  };
+
+  queryAdminUsers = async (params: {
+    keyword?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<AdminUserListResponse> => {
+    return lambdaClient.user.queryAdminUsers.query(params);
   };
 
   getUserSSOProviders = async (): Promise<SSOProvider[]> => {

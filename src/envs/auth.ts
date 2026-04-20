@@ -5,6 +5,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface ProcessEnv {
+      AUTH_ADMIN_USER_IDS?: string;
       AUTH_ALLOWED_EMAILS?: string;
       AUTH_APPLE_APP_BUNDLE_IDENTIFIER?: string;
       AUTH_APPLE_CLIENT_ID?: string;
@@ -114,6 +115,7 @@ export const getAuthConfig = () => {
       AUTH_SSO_PROVIDERS: z.string().optional().default(''),
       AUTH_TRUSTED_ORIGINS: z.string().optional(),
       AUTH_EMAIL_VERIFICATION: z.boolean().optional().default(false),
+      AUTH_ADMIN_USER_IDS: z.string().optional(),
       AUTH_ENABLE_MAGIC_LINK: z.boolean().optional().default(false),
       AUTH_ALLOWED_EMAILS: z.string().optional(),
       AUTH_DISABLE_EMAIL_PASSWORD: z.boolean().optional().default(false),
@@ -202,6 +204,7 @@ export const getAuthConfig = () => {
 
     runtimeEnv: {
       AUTH_EMAIL_VERIFICATION: process.env.AUTH_EMAIL_VERIFICATION === '1',
+      AUTH_ADMIN_USER_IDS: process.env.AUTH_ADMIN_USER_IDS,
       AUTH_ENABLE_MAGIC_LINK: process.env.AUTH_ENABLE_MAGIC_LINK === '1',
       AUTH_SECRET: process.env.AUTH_SECRET,
       AUTH_SSO_PROVIDERS: process.env.AUTH_SSO_PROVIDERS,
@@ -297,6 +300,17 @@ export const getAuthConfig = () => {
 };
 
 export const authEnv = getAuthConfig();
+
+const parseAdminUserIds = (value?: string) => {
+  return (value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+export const getAuthAdminUserIds = () => parseAdminUserIds(authEnv.AUTH_ADMIN_USER_IDS);
+
+export const isAuthAdminUser = (userId: string) => getAuthAdminUserIds().includes(userId);
 
 // Auth headers and constants
 export const LOBE_CHAT_AUTH_HEADER = 'X-lobe-chat-auth';

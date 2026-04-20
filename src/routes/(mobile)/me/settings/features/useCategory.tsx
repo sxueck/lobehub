@@ -13,6 +13,7 @@ import {
   KeyRound,
   Map,
   PaletteIcon,
+  ShieldUser,
   Sparkles,
   UserCircle,
 } from 'lucide-react';
@@ -28,6 +29,7 @@ import {
   useServerConfigStore,
 } from '@/store/serverConfig';
 import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selectors';
 
 export enum SettingsGroupKey {
@@ -52,6 +54,7 @@ export const useCategory = (): CategoryGroup[] => {
   const { t } = useTranslation(['setting', 'auth', 'subscription']);
   const { hideDocs, showApiKeyManage, showProvider } = useServerConfigStore(featureFlagsSelectors);
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
+  const isAdmin = useUserStore(userProfileSelectors.isAdmin);
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
 
   return useMemo(() => {
@@ -116,6 +119,7 @@ export const useCategory = (): CategoryGroup[] => {
     ].filter((item): item is CategoryItem => Boolean(item));
 
     const system: CategoryItem[] = [
+      isAdmin && makeItem({ icon: ShieldUser, key: SettingsTabs.Admin, label: t('setting:tab.admin') }),
       makeItem({ icon: Database, key: SettingsTabs.Storage, label: t('setting:tab.storage') }),
       isDevMode &&
         makeItem({ icon: KeyIcon, key: SettingsTabs.APIKey, label: t('auth:tab.apikey') }),
@@ -137,5 +141,5 @@ export const useCategory = (): CategoryGroup[] => {
       { items: agent, key: SettingsGroupKey.Agent, title: t('setting:group.aiConfig') },
       { items: system, key: SettingsGroupKey.System, title: t('setting:group.system') },
     ].filter((group) => group.items.length > 0);
-  }, [t, enableBusinessFeatures, hideDocs, showApiKeyManage, showProvider, isDevMode, navigate]);
+  }, [t, enableBusinessFeatures, hideDocs, showApiKeyManage, showProvider, isAdmin, isDevMode, navigate]);
 };

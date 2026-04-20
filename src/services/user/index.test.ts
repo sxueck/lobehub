@@ -6,6 +6,7 @@ import { UserService, userService } from './index';
 
 const mockLambdaClient = vi.hoisted(() => ({
   user: {
+    queryAdminUsers: { query: vi.fn() },
     getUserRegistrationDuration: { query: vi.fn() },
     getUserState: { query: vi.fn() },
     getUserSSOProviders: { query: vi.fn() },
@@ -47,6 +48,19 @@ describe('UserService', () => {
 
       expect(mockLambdaClient.user.getUserState.query).toHaveBeenCalled();
       expect(result).toEqual(mockState);
+    });
+  });
+
+  describe('queryAdminUsers', () => {
+    it('should call lambdaClient.user.queryAdminUsers.query', async () => {
+      const params = { keyword: 'alice', page: 2, pageSize: 10 };
+      const mockResult = { total: 1, users: [{ id: 'user_1', isAdmin: true }] };
+      mockLambdaClient.user.queryAdminUsers.query.mockResolvedValueOnce(mockResult);
+
+      const result = await userService.queryAdminUsers(params);
+
+      expect(mockLambdaClient.user.queryAdminUsers.query).toHaveBeenCalledWith(params);
+      expect(result).toEqual(mockResult);
     });
   });
 
