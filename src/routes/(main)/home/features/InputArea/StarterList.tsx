@@ -3,7 +3,7 @@ import { type ButtonProps } from '@lobehub/ui';
 import { Button, Center, Tooltip } from '@lobehub/ui';
 import { GroupBotSquareIcon } from '@lobehub/ui/icons';
 import { createStaticStyles, cssVar, cx } from 'antd-style';
-import { BotIcon, ImageIcon, PenLineIcon, VideoIcon } from 'lucide-react';
+import { BotIcon, ImageIcon, PenLineIcon } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -35,7 +35,6 @@ type StarterTitleKey =
   | 'starter.createGroup'
   | 'starter.write'
   | 'starter.imageGeneration'
-  | 'starter.videoGeneration'
   | 'starter.deepResearch';
 
 interface StarterItem {
@@ -81,12 +80,7 @@ const StarterList = memo(() => {
         key: 'image',
         titleKey: 'starter.imageGeneration',
       },
-      {
-        hot: true,
-        icon: VideoIcon,
-        key: 'video',
-        titleKey: 'starter.videoGeneration',
-      },
+
       // {
       //   disabled: true,
       //   icon: MicroscopeIcon,
@@ -99,11 +93,6 @@ const StarterList = memo(() => {
 
   const handleClick = useCallback(
     (key: StarterMode) => {
-      if (key === 'video') {
-        navigate('/video?model=doubao-seedance-2-0-260128');
-        return;
-      }
-
       if (key === 'image') {
         navigate('/image');
         return;
