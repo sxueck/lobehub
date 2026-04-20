@@ -21,6 +21,7 @@ import { type AiInfraStore } from '@/store/aiInfra/store';
 import { type StoreSetter } from '@/store/types';
 import { useUserStore } from '@/store/user';
 import { authSelectors } from '@/store/user/selectors';
+import { getServerConfigStoreState } from '@/store/serverConfig/store';
 import {
   type AiProviderDetailItem,
   type AiProviderListItem,
@@ -498,8 +499,16 @@ export class AiProviderActionImpl {
           };
         }
 
-        const enabledAiProviders: EnabledProvider[] = DEFAULT_MODEL_PROVIDER_LIST.filter(
-          (provider) => provider.enabled,
+        const serverAiProviderConfig = getServerConfigStoreState().serverConfig.aiProvider || {};
+
+        const enabledProviderIds = new Set(
+          DEFAULT_MODEL_PROVIDER_LIST.filter(
+            (provider) => serverAiProviderConfig[provider.id]?.enabled ?? provider.enabled,
+          ).map((provider) => provider.id),
+        );
+
+        const enabledAiProviders: EnabledProvider[] = DEFAULT_MODEL_PROVIDER_LIST.filter((provider) =>
+          enabledProviderIds.has(provider.id),
         ).map((item) => ({ id: item.id, name: item.name, source: AiProviderSourceEnum.Builtin }));
 
         const enabledChatAiProviders = enabledAiProviders.filter((provider) => {
@@ -525,7 +534,9 @@ export class AiProviderActionImpl {
           .map((item) => ({ id: item.id, name: item.name, source: AiProviderSourceEnum.Builtin }));
 
         // Build model lists for non-login state as well
-        const enabledAiModels = builtinAiModelList.filter((m) => m.enabled);
+        const enabledAiModels = builtinAiModelList.filter(
+          (model) => model.enabled && enabledProviderIds.has(model.providerId),
+        );
         const [enabledChatModelList, enabledImageModelList, enabledVideoModelList] =
           await Promise.all([
             buildChatProviderModelLists(enabledChatAiProviders, enabledAiModels),
