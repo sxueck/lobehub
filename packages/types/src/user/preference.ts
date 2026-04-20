@@ -13,9 +13,26 @@ export interface LobeUser {
   firstName?: string | null;
   fullName?: string | null;
   id: string;
+  isAdmin?: boolean;
   interests?: string[];
   latestName?: string | null;
   username?: string | null;
+}
+
+export interface AdminUserListItem {
+  avatar?: string | null;
+  createdAt: Date;
+  email?: string | null;
+  fullName?: string | null;
+  id: string;
+  isAdmin: boolean;
+  lastActiveAt: Date;
+  username?: string | null;
+}
+
+export interface AdminUserListResponse {
+  total: number;
+  users: AdminUserListItem[];
 }
 
 export const UserGuideSchema = z.object({
@@ -105,6 +122,7 @@ export interface UserInitializationState {
   fullName?: string;
   hasConversation?: boolean;
   interests?: string[];
+  isAdmin?: boolean;
   isFreePlan?: boolean;
   /** @deprecated Use onboarding field instead */
   isOnboard?: boolean;

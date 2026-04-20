@@ -109,6 +109,24 @@ describe('userProfileSelectors', () => {
     });
   });
 
+  describe('isAdmin', () => {
+    it('should return true when current user is admin', () => {
+      const store: UserStore = {
+        user: { id: 'user-1', isAdmin: true },
+      } as UserStore;
+
+      expect(userProfileSelectors.isAdmin(store)).toBe(true);
+    });
+
+    it('should return false when current user is not admin', () => {
+      const store: UserStore = {
+        user: { id: 'user-1', isAdmin: false },
+      } as UserStore;
+
+      expect(userProfileSelectors.isAdmin(store)).toBe(false);
+    });
+  });
+
   describe('username', () => {
     it('should return user username when signed in', () => {
       const store: UserStore = {

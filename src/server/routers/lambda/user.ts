@@ -5,10 +5,12 @@ import {
 import { isDesktop } from '@lobechat/const';
 import { applyMarkdownPatch, formatMarkdownPatchError } from '@lobechat/markdown-patch';
 import {
+  type AdminUserListResponse,
   type UserInitializationState,
   type UserPreference,
   type UserSettings,
 } from '@lobechat/types';
+import { count, desc, ilike, or } from 'drizzle-orm';
 import {
   Plans,
   SaveUserQuestionInputSchema,
@@ -31,6 +33,8 @@ import {
 import { MessageModel } from '@/database/models/message';
 import { SessionModel } from '@/database/models/session';
 import { UserModel } from '@/database/models/user';
+import { users } from '@/database/schemas';
+import { isAuthAdminUser } from '@/envs/auth';
 import { authedProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 import { KeyVaultsGateKeeper } from '@/server/modules/KeyVaultsEncrypt';
@@ -80,6 +84,23 @@ const userProcedure = authedProcedure.use(serverDatabase).use(async ({ ctx, next
     },
   });
 });
+
+const adminUserProcedure = userProcedure.use(({ ctx, next }) => {
+  if (!isAuthAdminUser(ctx.userId)) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'ADMIN_ONLY' });
+  }
+
+  return next();
+});
+
+const adminUserListInputSchema = z.object({
+  keyword: z.string().trim().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20),
+});
+
+const escapeLikePattern = (value: string) =>
+  value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 
 export const userRouter = router({
   getUserRegistrationDuration: userProcedure.query(async ({ ctx }) => {
@@ -147,6 +168,7 @@ export const userRouter = router({
 
       agentOnboarding: state.agentOnboarding,
       interests: state.interests,
+      isAdmin: isAuthAdminUser(ctx.userId),
 
       // always return true for community version
       isOnboard: state.isOnboarded ?? true,
@@ -163,6 +185,55 @@ export const userRouter = router({
       isFreePlan: !subscriptionPlan || subscriptionPlan === Plans.Free,
     } satisfies UserInitializationState;
   }),
+
+  queryAdminUsers: adminUserProcedure
+    .input(adminUserListInputSchema)
+    .query(async ({ ctx, input }): Promise<AdminUserListResponse> => {
+      const { keyword, page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+      const keywordPattern = keyword ? `%${escapeLikePattern(keyword)}%` : undefined;
+      const where = keywordPattern
+        ? or(
+            ilike(users.id, keywordPattern),
+            ilike(users.email, keywordPattern),
+            ilike(users.fullName, keywordPattern),
+            ilike(users.username, keywordPattern),
+          )
+        : undefined;
+
+      const [rows, totalResult] = await Promise.all([
+        ctx.serverDB.query.users.findMany({
+          columns: {
+            avatar: true,
+            createdAt: true,
+            email: true,
+            fullName: true,
+            id: true,
+            lastActiveAt: true,
+            username: true,
+          },
+          limit: pageSize,
+          offset,
+          orderBy: desc(users.createdAt),
+          where,
+        }),
+        ctx.serverDB.select({ count: count() }).from(users).where(where),
+      ]);
+
+      return {
+        total: totalResult[0]?.count ?? 0,
+        users: rows.map((user) => ({
+          avatar: user.avatar,
+          createdAt: user.createdAt,
+          email: user.email,
+          fullName: user.fullName,
+          id: user.id,
+          isAdmin: isAuthAdminUser(user.id),
+          lastActiveAt: user.lastActiveAt,
+          username: user.username,
+        })),
+      } satisfies AdminUserListResponse;
+    }),
 
   makeUserOnboarded: userProcedure.mutation(async ({ ctx }) => {
     return ctx.userModel.updateUser({ isOnboarded: true });

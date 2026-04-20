@@ -38,6 +38,7 @@ export enum GroupSettingsTabs {
 export type WorkingSidebarTab = 'files' | 'params' | 'resources' | 'review';
 
 export enum SettingsTabs {
+  Admin = 'admin',
   About = 'about',
   Advanced = 'advanced',
   /** @deprecated Use ServiceModel instead */

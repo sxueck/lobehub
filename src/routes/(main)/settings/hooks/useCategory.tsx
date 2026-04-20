@@ -19,6 +19,7 @@ import {
   Map,
   MessageCircleIcon,
   PaletteIcon,
+  ShieldUser,
   Sparkles,
   TerminalSquare,
 } from 'lucide-react';
@@ -66,6 +67,7 @@ export const useCategory = () => {
     userProfileSelectors.userAvatar(s),
     userProfileSelectors.nickName(s),
   ]);
+  const isAdmin = useUserStore(userProfileSelectors.isAdmin);
   const remoteServerUrl = useElectronStore(electronSyncSelectors.remoteServerUrl);
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
 
@@ -189,6 +191,11 @@ export const useCategory = () => {
         key: SettingsTabs.SystemTools,
         label: t('tab.systemTools'),
       },
+      isAdmin && {
+        icon: ShieldUser,
+        key: SettingsTabs.Admin,
+        label: t('tab.admin'),
+      },
       {
         icon: Database,
         key: SettingsTabs.Storage,
@@ -224,6 +231,7 @@ export const useCategory = () => {
     tSubscription,
     enableBusinessFeatures,
     hideDocs,
+    isAdmin,
     mobile,
     showApiKeyManage,
     showProvider,
