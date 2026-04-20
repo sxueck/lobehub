@@ -468,8 +468,13 @@ export class AiInfraRepos {
    */
   getAiProviderDetail = async (id: string, decryptor?: DecryptUserKeyVaults) => {
     const config = await this.aiProviderModel.getAiProviderById(id, decryptor);
+    const merged = merge(this.providerConfigs[id] || {}, config) as AiProviderDetailItem;
 
-    return merge(this.providerConfigs[id] || {}, config) as AiProviderDetailItem;
+    if (this.providerConfigs[id]?.serverManaged) {
+      merged.enabled = !!this.providerConfigs[id]?.enabled;
+    }
+
+    return merged;
   };
 
   /**
