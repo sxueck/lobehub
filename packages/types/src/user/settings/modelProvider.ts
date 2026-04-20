@@ -17,6 +17,12 @@ export interface ProviderConfig {
    * enabled models id
    */
   enabledModels?: string[] | null;
+
+  /**
+   * whether provider enabled state should be fully managed by server config
+   */
+  serverManaged?: boolean;
+
   /**
    * whether fetch on client
    */

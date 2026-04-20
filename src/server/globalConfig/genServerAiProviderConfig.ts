@@ -9,13 +9,36 @@ import { extractEnabledModels, transformToAiModelList } from '@/utils/server/par
 interface ProviderSpecificConfig {
   enabled?: boolean;
   enabledKey?: string;
+  envVarPrefix?: string;
   fetchOnClient?: boolean;
   modelListKey?: string;
   withDeploymentName?: boolean;
 }
 
+interface GenServerAiProvidersConfigOptions {
+  restrictToConfiguredProviders?: boolean;
+}
+
+const hasExplicitProviderConfiguration = (
+  provider: string,
+  providerConfig: ProviderSpecificConfig,
+) => {
+  const providerUpperCase = provider.toUpperCase();
+  const enabledKey = providerConfig.enabledKey || `ENABLED_${providerUpperCase}`;
+  const envVarPrefix = providerConfig.envVarPrefix || providerUpperCase;
+  const modelListKey = providerConfig.modelListKey ?? `${providerUpperCase}_MODEL_LIST`;
+
+  if (process.env[enabledKey] !== undefined) return true;
+  if (process.env[modelListKey] !== undefined) return true;
+
+  return Object.entries(process.env).some(
+    ([key, value]) => key.startsWith(`${envVarPrefix}_`) && value !== undefined && value !== '',
+  );
+};
+
 export const genServerAiProvidersConfig = async (
   specificConfig: Record<any, ProviderSpecificConfig>,
+  options: GenServerAiProvidersConfigOptions = {},
 ) => {
   const llmConfig = getLLMConfig() as Record<string, any>;
 
@@ -31,8 +54,13 @@ export const genServerAiProvidersConfig = async (
         );
 
       const providerConfig = specificConfig[provider as keyof typeof specificConfig] || {};
+      const hasExplicitConfig = hasExplicitProviderConfiguration(provider, providerConfig);
       const modelString =
         process.env[providerConfig.modelListKey ?? `${providerUpperCase}_MODEL_LIST`];
+      const resolvedEnabled =
+        typeof providerConfig.enabled !== 'undefined'
+          ? providerConfig.enabled
+          : llmConfig[providerConfig.enabledKey || `ENABLED_${providerUpperCase}`];
 
       // Process extractEnabledModels and transformToAiModelList concurrently
       const [enabledModels, serverModelLists] = await Promise.all([
@@ -48,10 +76,9 @@ export const genServerAiProvidersConfig = async (
       return {
         config: {
           enabled:
-            typeof providerConfig.enabled !== 'undefined'
-              ? providerConfig.enabled
-              : llmConfig[providerConfig.enabledKey || `ENABLED_${providerUpperCase}`],
+            options.restrictToConfiguredProviders && !hasExplicitConfig ? false : resolvedEnabled,
           enabledModels,
+          ...(options.restrictToConfiguredProviders && { serverManaged: true }),
           serverModelLists,
           ...(providerConfig.fetchOnClient !== undefined && {
             fetchOnClient: providerConfig.fetchOnClient,
