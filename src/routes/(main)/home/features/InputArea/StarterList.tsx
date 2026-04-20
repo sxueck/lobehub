@@ -1,5 +1,4 @@
 import { BUILTIN_AGENT_SLUGS } from '@lobechat/builtin-agents';
-import { Jimeng } from '@lobehub/icons';
 import { type ButtonProps } from '@lobehub/ui';
 import { Button, Center, Tooltip } from '@lobehub/ui';
 import { GroupBotSquareIcon } from '@lobehub/ui/icons';
@@ -36,7 +35,6 @@ type StarterTitleKey =
   | 'starter.createGroup'
   | 'starter.write'
   | 'starter.imageGeneration'
-  | 'starter.videoGeneration'
   | 'starter.deepResearch';
 
 interface StarterItem {
@@ -83,12 +81,6 @@ const StarterList = memo(() => {
         key: 'image',
         titleKey: 'starter.imageGeneration',
       },
-      {
-        hot: true,
-        icon: Jimeng.Color,
-        key: 'video',
-        titleKey: 'starter.videoGeneration',
-      },
       // {
       //   disabled: true,
       //   icon: MicroscopeIcon,
@@ -101,11 +93,6 @@ const StarterList = memo(() => {
 
   const handleClick = useCallback(
     (key: StarterMode) => {
-      if (key === 'video') {
-        navigate('/video?model=doubao-seedance-2-0-260128');
-        return;
-      }
-
       if (key === 'image') {
         navigate('/image?model=gpt-image-2');
         return;
