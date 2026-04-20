@@ -150,16 +150,31 @@ export class AiInfraRepos {
     const orderMap = new Map(DEFAULT_MODEL_PROVIDER_LIST.map((item, index) => [item.id, index]));
 
     const builtinProviders = DEFAULT_MODEL_PROVIDER_LIST.map((item) => ({
+      ...(() => {
+        const serverConfig = this.providerConfigs[item.id];
+        const userEnabled = userProviders.some((provider) => provider.id === item.id && provider.enabled);
+
+        if (serverConfig?.serverManaged) {
+          return { enabled: !!serverConfig.enabled };
+        }
+
+        return { enabled: userEnabled || serverConfig?.enabled };
+      })(),
       description: item.description,
-      enabled:
-        userProviders.some((provider) => provider.id === item.id && provider.enabled) ||
-        this.providerConfigs[item.id]?.enabled,
       id: item.id,
       name: item.name,
       source: 'builtin',
     })) as AiProviderListItem[];
 
-    const mergedProviders = mergeArrayById(builtinProviders, userProviders);
+    const mergedProviders = mergeArrayById(builtinProviders, userProviders).map((item) => {
+      const serverConfig = this.providerConfigs[item.id];
+
+      if (item.source === 'builtin' && serverConfig?.serverManaged) {
+        return { ...item, enabled: !!serverConfig.enabled };
+      }
+
+      return item;
+    });
 
     // 3. Sort based on orderMap
     return mergedProviders.sort((a, b) => {
