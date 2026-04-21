@@ -98,7 +98,7 @@ const InputArea = () => {
   );
 
   return (
-    <Flexbox gap={16} style={{ marginBottom: 16 }}>
+    <Flexbox gap={16}>
       <Flexbox
         ref={chatInputRef}
         style={{ paddingBottom: visibleBanner ? 32 : 0, position: 'relative' }}

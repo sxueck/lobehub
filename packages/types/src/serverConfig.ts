@@ -72,6 +72,7 @@ export interface GlobalServerConfig {
   enableLobehubSkill?: boolean;
   enableMagicLink?: boolean;
   enableMarketTrustedClient?: boolean;
+  enableMessageChannels?: boolean;
   enableUploadFileToServer?: boolean;
   enableVisualUnderstanding?: boolean;
   image?: PartialDeep<UserImageConfig>;

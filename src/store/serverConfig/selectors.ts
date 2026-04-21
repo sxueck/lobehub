@@ -14,6 +14,7 @@ export const serverConfigSelectors = {
   enableMagicLink: (s: ServerConfigStore) => s.serverConfig.enableMagicLink || false,
   enableMarketTrustedClient: (s: ServerConfigStore) =>
     s.serverConfig.enableMarketTrustedClient || false,
+  enableMessageChannels: (s: ServerConfigStore) => s.serverConfig.enableMessageChannels ?? true,
   enableUploadFileToServer: (s: ServerConfigStore) => s.serverConfig.enableUploadFileToServer,
   enableVisualUnderstanding: (s: ServerConfigStore) =>
     s.serverConfig.enableVisualUnderstanding || false,

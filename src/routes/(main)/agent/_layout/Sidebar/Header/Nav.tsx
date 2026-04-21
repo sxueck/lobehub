@@ -16,7 +16,11 @@ import { useAgentStore } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { useGlobalStore } from '@/store/global';
-import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
+import {
+  featureFlagsSelectors,
+  serverConfigSelectors,
+  useServerConfigStore,
+} from '@/store/serverConfig';
 
 const Nav = memo(() => {
   const { t } = useTranslation('chat');
@@ -27,15 +31,17 @@ const Nav = memo(() => {
   const isProfileActive = pathname.includes('/profile');
   const isChannelActive = pathname.includes('/channel');
   const router = useQueryRoute();
-  const { isAgentEditable } = useServerConfigStore(featureFlagsSelectors);
+  const { isAgentEditable, enableAgentTask } = useServerConfigStore(featureFlagsSelectors);
+  const enableMessageChannels = useServerConfigStore(serverConfigSelectors.enableMessageChannels);
+  const serverConfigInit = useServerConfigStore((s) => s.serverConfigInit);
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
   const heterogeneousProviderType = useAgentStore(
     agentSelectors.currentAgentHeterogeneousProviderType,
   );
   const hideProfile = !isAgentEditable;
-  // Claude Code agents can use message channels; other hetero providers (e.g. codex) still hide it.
+  const isHeterogeneousAgent = useAgentStore(agentSelectors.isCurrentAgentHeterogeneous);
   const hideChannel =
-    hideProfile || (!!heterogeneousProviderType && heterogeneousProviderType !== 'claude-code');
+    !serverConfigInit || !enableMessageChannels || hideProfile || isHeterogeneousAgent;
   const switchTopic = useChatStore((s) => s.switchTopic);
   const [openNewTopicOrSaveTopic] = useChatStore((s) => [s.openNewTopicOrSaveTopic]);
 
