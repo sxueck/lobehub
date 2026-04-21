@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import DragUploadZone, { useUploadFiles } from '@/components/DragUploadZone';
 import { type ActionKeys } from '@/features/ChatInput';
 import { ChatInputProvider, DesktopChatInput } from '@/features/ChatInput';
-import { useHomeDailyBrief } from '@/hooks/useHomeDailyBrief';
 import { useInitAgentConfig } from '@/hooks/useInitAgentConfig';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors } from '@/store/agent/selectors';
@@ -15,7 +14,6 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
 
 import BotIntegrationBanner, { BOT_INTEGRATION_BANNER_ID } from './BotIntegrationBanner';
-import { stripMarkdownLinks } from './hintFormat';
 import MessengerBanner, { MESSENGER_BANNER_ID } from './MessengerBanner';
 import SkillInstallBanner, { SKILL_INSTALL_BANNER_ID } from './SkillInstallBanner';
 import StarterList from './StarterList';
@@ -28,14 +26,7 @@ type BannerKind = 'skill' | 'botIntegration' | 'messenger';
 
 const InputArea = () => {
   const { loading, send, agentId } = useSend();
-  // Subscribe to the SWR key so `internal_refreshAgentConfig`'s `mutate(...)`
-  // has a listener after toggleFile / toggleKnowledgeBase — otherwise the
-  // Library submenu doesn't reflect server-side toggles. Pass `agentId`
-  // explicitly so AgentSelect switches refetch too.
   useInitAgentConfig(agentId);
-  // Use the "config absent from agentMap" loading shape (same as Memory /
-  // Search / History) instead of SWR's `isLoading`, which would flash on
-  // every mount-time revalidation even when inbox data is already cached.
   const isAgentConfigLoading = useAgentStore((s) =>
     agentByIdSelectors.isAgentConfigLoadingById(agentId ?? '')(s),
   );
@@ -54,11 +45,6 @@ const InputArea = () => {
   );
   const chatInputRef = useRef<HTMLDivElement>(null);
 
-  // Wait for both stores to finish hydrating before drawing — server config
-  // (skill flags) and the agent store (inboxAgentId) hydrate at different
-  // times, and picking too early biases the draw toward whichever arrived
-  // first. After picking, dismissing the active banner only hides it for
-  // this mount — re-mounting re-rolls from the still-undismissed pool.
   const [activeBanner, setActiveBanner] = useState<BannerKind | null>(null);
   const hasPickedRef = useRef(false);
 
@@ -92,9 +78,6 @@ const InputArea = () => {
     (activeBanner === 'messenger' && isMessengerBannerDismissed);
   const visibleBanner = isActiveBannerDismissed ? null : activeBanner;
 
-  // Get agent's model info for vision support check. Falls back to an empty
-  // id while the agent id resolves; the selectors return DEFAULT_MODEL /
-  // DEFAULT_PROVIDER for unknown ids.
   const resolvedAgentId = agentId ?? '';
   const model = useAgentStore((s) => agentByIdSelectors.getAgentModelById(resolvedAgentId)(s));
   const provider = useAgentStore((s) =>
@@ -102,8 +85,6 @@ const InputArea = () => {
   );
   const { handleUploadFiles } = useUploadFiles({ model, provider });
 
-  // A slot to insert content above the chat input
-  // Override some default behavior of the chat input
   const inputContainerProps = useMemo(
     () => ({
       minHeight: 88,
@@ -115,12 +96,6 @@ const InputArea = () => {
     }),
     [],
   );
-
-  // Daily-generated input hint paired with the home WelcomeText. The hint
-  // tracks whichever pair the WelcomeText typewriter is currently showing,
-  // via the shared rotating index inside `useHomeDailyBrief`.
-  const { currentPair } = useHomeDailyBrief();
-  const dailyHint = currentPair?.hint ? stripMarkdownLinks(currentPair.hint) : undefined;
 
   return (
     <Flexbox gap={16} style={{ marginBottom: 16 }}>
@@ -159,7 +134,6 @@ const InputArea = () => {
             <DesktopChatInput
               dropdownPlacement="bottomLeft"
               inputContainerProps={inputContainerProps}
-              placeholder={dailyHint}
               showRuntimeConfig={false}
             />
           </ChatInputProvider>
