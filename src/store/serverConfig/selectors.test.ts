@@ -27,6 +27,35 @@ describe('featureFlagsSelectors', () => {
 });
 
 describe('serverConfigSelectors', () => {
+  describe('enableMessageChannels', () => {
+    it('should default to true when the server config does not define it', () => {
+      const store = initServerConfigStore({
+        serverConfig: {
+          aiProvider: {},
+          telemetry: {},
+        },
+      });
+
+      const result = serverConfigSelectors.enableMessageChannels(store.getState());
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when message channels are disabled', () => {
+      const store = initServerConfigStore({
+        serverConfig: {
+          aiProvider: {},
+          enableMessageChannels: false,
+          telemetry: {},
+        },
+      });
+
+      const result = serverConfigSelectors.enableMessageChannels(store.getState());
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('enabledTelemetryChat', () => {
     it('should return langfuse value from store when defined', () => {
       const store = initServerConfigStore({

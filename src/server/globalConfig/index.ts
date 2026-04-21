@@ -3,6 +3,7 @@ import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 import { getServerFeatureFlagsValue } from '@/config/featureFlags';
 import { klavisEnv } from '@/config/klavis';
 import { isDesktop } from '@/const/version';
+import { agentEnv } from '@/envs/agent';
 import { appEnv, getAppConfig } from '@/envs/app';
 import { authEnv } from '@/envs/auth';
 import { fileEnv } from '@/envs/file';
@@ -32,50 +33,51 @@ export const getServerGlobalConfig = async () => {
   const featureFlags = getServerFeatureFlagsValue();
 
   const config: GlobalServerConfig = {
-    aiProvider: await genServerAiProvidersConfig({
-      ...(ENABLE_BUSINESS_FEATURES
-        ? {
-            lobehub: {
-              enabled: true,
-            },
-          }
-        : {}),
-      azure: {
-        enabledKey: 'ENABLED_AZURE_OPENAI',
-        withDeploymentName: true,
-      },
-      bedrock: {
-        enabledKey: 'ENABLED_AWS_BEDROCK',
-        envVarPrefix: 'AWS',
-        modelListKey: 'AWS_BEDROCK_MODEL_LIST',
-      },
-      giteeai: {
-        enabledKey: 'ENABLED_GITEE_AI',
-        envVarPrefix: 'GITEE_AI',
-        modelListKey: 'GITEE_AI_MODEL_LIST',
-      },
-      lmstudio: {
-        fetchOnClient: isDesktop ? false : undefined,
-      },
-      ollama: {
-        enabled: isDesktop ? true : undefined,
-        fetchOnClient: isDesktop ? false : !process.env.OLLAMA_PROXY_URL,
-      },
-      ollamacloud: {
-        enabledKey: 'ENABLED_OLLAMA_CLOUD',
-        envVarPrefix: 'OLLAMA_CLOUD',
-      },
-      qwen: {
-        withDeploymentName: true,
-      },
-      tencentcloud: {
-        enabledKey: 'ENABLED_TENCENT_CLOUD',
-        envVarPrefix: 'TENCENT_CLOUD',
-        modelListKey: 'TENCENT_CLOUD_MODEL_LIST',
-      },
-      volcengine: {
-        withDeploymentName: true,
-      },
+    aiProvider: await genServerAiProvidersConfig(
+      {
+        ...(ENABLE_BUSINESS_FEATURES
+          ? {
+              lobehub: {
+                enabled: true,
+              },
+            }
+          : {}),
+        azure: {
+          enabledKey: 'ENABLED_AZURE_OPENAI',
+          withDeploymentName: true,
+        },
+        bedrock: {
+          enabledKey: 'ENABLED_AWS_BEDROCK',
+          envVarPrefix: 'AWS',
+          modelListKey: 'AWS_BEDROCK_MODEL_LIST',
+        },
+        giteeai: {
+          enabledKey: 'ENABLED_GITEE_AI',
+          envVarPrefix: 'GITEE_AI',
+          modelListKey: 'GITEE_AI_MODEL_LIST',
+        },
+        lmstudio: {
+          fetchOnClient: isDesktop ? false : undefined,
+        },
+        ollama: {
+          enabled: isDesktop ? true : undefined,
+          fetchOnClient: isDesktop ? false : !process.env.OLLAMA_PROXY_URL,
+        },
+        ollamacloud: {
+          enabledKey: 'ENABLED_OLLAMA_CLOUD',
+          envVarPrefix: 'OLLAMA_CLOUD',
+        },
+        qwen: {
+          withDeploymentName: true,
+        },
+        tencentcloud: {
+          enabledKey: 'ENABLED_TENCENT_CLOUD',
+          envVarPrefix: 'TENCENT_CLOUD',
+          modelListKey: 'TENCENT_CLOUD_MODEL_LIST',
+        },
+        volcengine: {
+          withDeploymentName: true,
+        },
       },
       { restrictToConfiguredProviders: featureFlags.provider_settings === false },
     ),
@@ -92,6 +94,7 @@ export const getServerGlobalConfig = async () => {
     enableMarketTrustedClient: !!(
       appEnv.MARKET_TRUSTED_CLIENT_SECRET && appEnv.MARKET_TRUSTED_CLIENT_ID
     ),
+    enableMessageChannels: agentEnv.ENABLE_MESSAGE_CHANNELS,
     enableUploadFileToServer: !!fileEnv.S3_SECRET_ACCESS_KEY,
 
     // Expose Agent Gateway URL to client when queue-based agent runtime is enabled
