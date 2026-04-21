@@ -8,6 +8,7 @@ import {
   Empty,
   Flexbox,
   List,
+  LOBE_THEME_APP_ID,
   Modal,
   SearchBar,
   stopPropagation,
@@ -543,6 +544,7 @@ const ChatGroupWizard = memo<ChatGroupWizardProps>(
 
     return (
       <Modal
+        getContainer={() => document.getElementById(LOBE_THEME_APP_ID) || document.body}
         open={open}
         title={t('groupWizard.title')}
         width={900}
