@@ -3,11 +3,13 @@
 import { Flexbox } from '@lobehub/ui';
 import { createStaticStyles } from 'antd-style';
 import { memo, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
+import urlJoin from 'url-join';
 
 import Loading from '@/components/Loading/BrandTextLoading';
 import NavHeader from '@/features/NavHeader';
 import { useAgentStore } from '@/store/agent';
+import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
 
 import { BOT_RUNTIME_STATUSES, type BotRuntimeStatus } from '../../../../types/botRuntimeStatus';
 import PlatformDetail from './detail';
@@ -24,8 +26,11 @@ const styles = createStaticStyles(({ css }) => ({
   `,
 }));
 
-const ChannelPage = memo(() => {
-  const { aid } = useParams<{ aid?: string }>();
+interface ChannelContentProps {
+  aid: string;
+}
+
+const ChannelContent = memo<ChannelContentProps>(({ aid }) => {
   const [activeProviderId, setActiveProviderId] = useState<string>('');
 
   const { data: platforms, isLoading: platformsLoading } = useAgentStore((s) =>
@@ -72,8 +77,6 @@ const ChannelPage = memo(() => {
     [providers, effectiveActiveId],
   );
 
-  if (!aid) return null;
-
   return (
     <Flexbox flex={1} height={'100%'}>
       <NavHeader />
@@ -101,6 +104,22 @@ const ChannelPage = memo(() => {
       </Flexbox>
     </Flexbox>
   );
+});
+
+const ChannelPage = memo(() => {
+  const { aid } = useParams<{ aid?: string }>();
+  const enableMessageChannels = useServerConfigStore(serverConfigSelectors.enableMessageChannels);
+  const serverConfigInit = useServerConfigStore((s) => s.serverConfigInit);
+
+  if (!aid) return null;
+
+  if (!serverConfigInit) return <Loading debugId="ChannelPage" />;
+
+  if (!enableMessageChannels) {
+    return <Navigate replace to={urlJoin('/agent', aid)} />;
+  }
+
+  return <ChannelContent aid={aid} />;
 });
 
 export default ChannelPage;

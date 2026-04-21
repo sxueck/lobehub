@@ -17,77 +17,99 @@ import { formatDate } from '@/utils/format';
 
 const styles = createStaticStyles(({ css }) => ({
   adminBadge: css`
-    padding: 4px 10px;
+    padding-block: 4px;
+    padding-inline: 10px;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 999px;
-    background: ${cssVar.colorFillQuaternary};
-    color: ${cssVar.colorTextSecondary};
+
     font-size: 12px;
     font-weight: 600;
+    color: ${cssVar.colorTextSecondary};
     white-space: nowrap;
+
+    background: ${cssVar.colorFillQuaternary};
   `,
   adminBadgeActive: css`
     border-color: color-mix(in srgb, ${cssVar.colorSuccess} 24%, transparent);
-    background: color-mix(in srgb, ${cssVar.colorSuccessBg} 82%, white 18%);
     color: ${cssVar.colorSuccess};
+    background: color-mix(in srgb, ${cssVar.colorSuccessBg} 82%, white 18%);
   `,
   dateText: css`
-    color: ${cssVar.colorTextSecondary};
     font-size: 12px;
     line-height: 1.6;
+    color: ${cssVar.colorTextSecondary};
     white-space: nowrap;
   `,
   hero: css`
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+
     padding: 20px;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 20px;
+
     background:
-      radial-gradient(circle at top left, color-mix(in srgb, ${cssVar.colorPrimaryBg} 88%, white 12%), transparent 52%),
-      linear-gradient(180deg, color-mix(in srgb, ${cssVar.colorBgContainer} 92%, white 8%), ${cssVar.colorBgLayout});
+      radial-gradient(
+        circle at top left,
+        color-mix(in srgb, ${cssVar.colorPrimaryBg} 88%, white 12%),
+        transparent 52%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, ${cssVar.colorBgContainer} 92%, white 8%),
+        ${cssVar.colorBgLayout}
+      );
   `,
   heroCount: css`
     display: inline-flex;
     gap: 8px;
     align-items: center;
-    padding: 6px 12px;
+
+    width: fit-content;
+    padding-block: 6px;
+    padding-inline: 12px;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 999px;
-    background: color-mix(in srgb, ${cssVar.colorBgContainer} 85%, white 15%);
-    color: ${cssVar.colorTextSecondary};
+
     font-size: 12px;
     font-weight: 600;
-    width: fit-content;
+    color: ${cssVar.colorTextSecondary};
+
+    background: color-mix(in srgb, ${cssVar.colorBgContainer} 85%, white 15%);
   `,
   heroDescription: css`
-    color: ${cssVar.colorTextSecondary};
+    max-width: 720px;
     font-size: 13px;
     line-height: 1.7;
-    max-width: 720px;
+    color: ${cssVar.colorTextSecondary};
   `,
   heroTitle: css`
-    color: ${cssVar.colorText};
     font-size: 20px;
     font-weight: 700;
     line-height: 1.2;
+    color: ${cssVar.colorText};
   `,
   idText: css`
-    display: inline-block;
     overflow: hidden;
+    display: inline-block;
+
     max-width: 320px;
-    padding: 6px 10px;
+    padding-block: 6px;
+    padding-inline: 10px;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 12px;
-    background: ${cssVar.colorFillQuaternary};
-    color: ${cssVar.colorTextSecondary};
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
-      'Courier New', monospace;
+
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+      monospace;
     font-size: 12px;
     line-height: 1.3;
+    color: ${cssVar.colorTextSecondary};
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    background: ${cssVar.colorFillQuaternary};
   `,
   search: css`
     .ant-input-group-wrapper,
@@ -114,32 +136,35 @@ const styles = createStaticStyles(({ css }) => ({
   `,
   tableWrap: css`
     overflow: hidden;
+
+    margin-block-start: 16px;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 18px;
+
     background: ${cssVar.colorBgContainer};
-    box-shadow: 0 10px 30px -24px rgba(15, 23, 42, 0.35);
+    box-shadow: 0 10px 30px -24px rgb(15 23 42 / 35%);
 
     .ant-table {
       background: transparent;
     }
 
     .ant-table-thead > tr > th {
-      color: ${cssVar.colorTextSecondary};
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      color: ${cssVar.colorTextSecondary};
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .ant-table-tbody > tr > td {
       padding-block: 14px !important;
-      border-top: 1px solid ${cssVar.colorBorderSecondary} !important;
-      transition: background-color 0.2s ease;
+      border-block-start: 1px solid ${cssVar.colorBorderSecondary} !important;
       vertical-align: middle;
+      transition: background-color 0.2s ease;
     }
 
     .ant-table-tbody > tr:first-child > td {
-      border-top: none !important;
+      border-block-start: none !important;
     }
 
     .ant-table-tbody > tr:hover > td {
@@ -147,19 +172,20 @@ const styles = createStaticStyles(({ css }) => ({
     }
 
     .ant-pagination {
-      padding: 0 20px 18px;
+      padding-block: 0 18px;
+      padding-inline: 20px;
     }
   `,
   userMeta: css`
-    color: ${cssVar.colorTextSecondary};
     font-size: 12px;
     line-height: 1.4;
+    color: ${cssVar.colorTextSecondary};
   `,
   userName: css`
-    color: ${cssVar.colorText};
     font-size: 14px;
     font-weight: 600;
     line-height: 1.35;
+    color: ${cssVar.colorText};
   `,
 }));
 

@@ -16,7 +16,11 @@ import { useAgentStore } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { useGlobalStore } from '@/store/global';
-import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
+import {
+  featureFlagsSelectors,
+  serverConfigSelectors,
+  useServerConfigStore,
+} from '@/store/serverConfig';
 
 const Nav = memo(() => {
   const { t } = useTranslation('chat');
@@ -29,10 +33,13 @@ const Nav = memo(() => {
   const isTasksActive = pathname.includes('/tasks');
   const router = useQueryRoute();
   const { isAgentEditable, enableAgentTask } = useServerConfigStore(featureFlagsSelectors);
+  const enableMessageChannels = useServerConfigStore(serverConfigSelectors.enableMessageChannels);
+  const serverConfigInit = useServerConfigStore((s) => s.serverConfigInit);
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
   const isHeterogeneousAgent = useAgentStore(agentSelectors.isCurrentAgentHeterogeneous);
   const hideProfile = !isAgentEditable;
-  const hideChannel = hideProfile || isHeterogeneousAgent;
+  const hideChannel =
+    !serverConfigInit || !enableMessageChannels || hideProfile || isHeterogeneousAgent;
   const switchTopic = useChatStore((s) => s.switchTopic);
   const [openNewTopicOrSaveTopic] = useChatStore((s) => [s.openNewTopicOrSaveTopic]);
 
