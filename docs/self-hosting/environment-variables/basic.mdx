@@ -209,6 +209,17 @@ SSRF_ALLOW_IP_ADDRESS_LIST=192.168.1.100,10.0.0.50
 
 This environment variable allows administrators to customize the default image generation count for their deployment. The value must be between 1 and 20. If not set, it defaults to 4. Users can still adjust this value in their personal settings.
 
+## Agent
+
+### `ENABLE_MESSAGE_CHANNELS`
+
+- Type: Optional
+- Description: Controls whether users can access the agent message channel configuration page at `/agent/:id/channel`.
+- Default: `1`
+- Example: `0`
+
+Set this variable to `0` to hide the message channel entry in the agent sidebar and block direct access to the configuration route.
+
 ## Authentication
 
 ### `AUTH_ADMIN_USER_IDS`

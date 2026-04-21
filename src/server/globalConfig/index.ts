@@ -3,6 +3,7 @@ import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 import { getServerFeatureFlagsValue } from '@/config/featureFlags';
 import { klavisEnv } from '@/config/klavis';
 import { isDesktop } from '@/const/version';
+import { agentEnv } from '@/envs/agent';
 import { appEnv, getAppConfig } from '@/envs/app';
 import { authEnv } from '@/envs/auth';
 import { fileEnv } from '@/envs/file';
@@ -92,6 +93,7 @@ export const getServerGlobalConfig = async () => {
     enableMarketTrustedClient: !!(
       appEnv.MARKET_TRUSTED_CLIENT_SECRET && appEnv.MARKET_TRUSTED_CLIENT_ID
     ),
+    enableMessageChannels: agentEnv.ENABLE_MESSAGE_CHANNELS,
     enableUploadFileToServer: !!fileEnv.S3_SECRET_ACCESS_KEY,
 
     // Expose Agent Gateway URL to client when queue-based agent runtime is enabled
