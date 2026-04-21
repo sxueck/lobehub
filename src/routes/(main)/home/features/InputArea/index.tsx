@@ -30,10 +30,7 @@ const InputArea = () => {
   const showSkillBanner = (isLobehubSkillEnabled || isKlavisEnabled) && !isSkillBannerDismissed;
   const chatInputRef = useRef<HTMLDivElement>(null);
 
-  // When a starter mode is activated (e.g. Create Agent / Create Group / Write),
-  // the SuggestQuestions panel renders below the ChatInput and may push the total
-  // content height beyond the viewport, causing the ChatInput to scroll out of view.
-  // Re-focus the editor and scroll it into view so the user can type immediately.
+  // Re-focus the editor and scroll it back into view when switching starter modes.
   useEffect(() => {
     if (!inputActiveMode) return;
 
@@ -79,7 +76,7 @@ const InputArea = () => {
   );
 
   return (
-    <Flexbox gap={16} style={{ marginBottom: 16 }}>
+    <Flexbox gap={16}>
       <Flexbox
         ref={chatInputRef}
         style={{ paddingBottom: showSkillBanner ? 32 : 0, position: 'relative' }}

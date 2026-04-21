@@ -26,9 +26,12 @@ const Home = memo(() => {
   const Welcome = useCallback(() => <WelcomeText />, [i18n.language]);
 
   return (
-    <Flexbox gap={40}>
-      <Welcome />
-      <InputArea />
+    <Flexbox height={'100%'}>
+      <Flexbox flex={1} gap={24} justify={'center'}>
+        <Welcome />
+        <InputArea />
+      </Flexbox>
+
       {/* Use CSS visibility to hide instead of unmounting to prevent data re-fetching */}
       <Flexbox gap={40} style={{ display: hideOtherModules ? 'none' : undefined }}>
         {isDevMode && <CommunityAgents />}

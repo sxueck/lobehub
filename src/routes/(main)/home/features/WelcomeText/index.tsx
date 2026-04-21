@@ -16,7 +16,6 @@ const WelcomeText = memo(() => {
       style={{
         fontSize: 28,
         fontWeight: 'bold',
-        marginBlock: '36px 24px',
       }}
     >
       {sentence}
