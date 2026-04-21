@@ -7,6 +7,7 @@ import {
   Checkbox,
   Flexbox,
   List,
+  LOBE_THEME_APP_ID,
   Modal,
   SearchBar,
   Text,
@@ -368,6 +369,7 @@ const MemberSelectionModal = memo<MemberSelectionModalProps>(
     return (
       <Modal
         allowFullscreen
+        getContainer={() => document.getElementById(LOBE_THEME_APP_ID) || document.body}
         open={open}
         title={modalTitle}
         width={800}
