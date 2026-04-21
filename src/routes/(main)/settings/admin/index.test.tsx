@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,12 +7,45 @@ import Page from './index';
 const useClientDataSWR = vi.fn();
 
 vi.mock('@lobehub/ui', () => ({
+  Avatar: ({ avatar, children }: { avatar?: ReactNode; children?: ReactNode }) => <div>{avatar || children}</div>,
   Empty: ({ description }: { description?: ReactNode }) => <div>{description}</div>,
-  FormGroup: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  Flexbox: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  FormGroup: ({ children, title }: { children?: ReactNode; title?: ReactNode }) => (
+    <section>
+      {title ? <div>{title}</div> : null}
+      {children}
+    </section>
+  ),
 }));
 
 vi.mock('@/components/InlineTable', () => ({
-  default: () => <div>inline-table</div>,
+  default: ({
+    columns,
+    dataSource,
+  }: {
+    columns: Array<{
+      dataIndex: string;
+      key: string;
+      render?: (value: unknown, record: Record<string, unknown>) => ReactNode;
+      title: ReactNode;
+    }>;
+    dataSource: Record<string, unknown>[];
+  }) => (
+    <div>
+      {dataSource.map((record) => (
+        <div key={String(record.id)}>
+          {columns.map((column) => (
+            <div key={column.key}>
+              <span>{column.title}</span>
+              <div>
+                {column.render ? column.render(record[column.dataIndex], record) : record[column.dataIndex]}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('@/libs/swr', () => ({
@@ -78,5 +111,38 @@ describe('settings admin page', () => {
         expect.any(Function),
       );
     });
+  });
+
+  it('should render the hero title once and fall back to user initials when avatar is missing', () => {
+    useClientDataSWR.mockReturnValue({
+      data: {
+        total: 1,
+        users: [
+          {
+            createdAt: new Date('2026-04-01T00:00:00Z'),
+            email: 'alice@example.com',
+            fullName: 'Alice Example',
+            id: 'user-1',
+            isAdmin: true,
+            lastActiveAt: new Date('2026-04-02T00:00:00Z'),
+            username: 'alice',
+          },
+        ],
+      },
+      error: undefined,
+      isLoading: false,
+    });
+
+    render(<Page />);
+
+    expect(screen.getAllByText('All Users')).toHaveLength(1);
+
+    const nameHeader = screen.getByText('admin.users.columns.name').closest('div');
+
+    expect(nameHeader).not.toBeNull();
+
+    const nameCell = within(nameHeader as HTMLElement).getByText('A');
+
+    expect(nameCell).toBeInTheDocument();
   });
 });
