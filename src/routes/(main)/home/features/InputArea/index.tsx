@@ -1,5 +1,4 @@
 import { Flexbox } from '@lobehub/ui';
-import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useMemo, useRef } from 'react';
 
 import DragUploadZone, { useUploadFiles } from '@/components/DragUploadZone';
@@ -13,8 +12,6 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 import { useHomeStore } from '@/store/home';
 import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
 
-import CommunityRecommend from '../CommunityRecommend';
-import SuggestQuestions from '../SuggestQuestions';
 import ModeTag from './ModeTag';
 import SkillInstallBanner, { SKILL_INSTALL_BANNER_ID } from './SkillInstallBanner';
 import StarterList from './StarterList';
@@ -68,9 +65,6 @@ const InputArea = () => {
   );
 
   const hideStarterList = inputActiveMode && ['agent', 'group', 'write'].includes(inputActiveMode);
-  const showSuggestQuestions =
-    !inputActiveMode || ['agent', 'group', 'write'].includes(inputActiveMode);
-
   const extraActionItems = useMemo(
     () =>
       inputActiveMode
@@ -129,26 +123,6 @@ const InputArea = () => {
       <div style={{ display: hideStarterList ? 'none' : undefined }}>
         <StarterList />
       </div>
-      <AnimatePresence mode="popLayout">
-        {showSuggestQuestions && (
-          <m.div
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 8 }}
-            initial={{ opacity: 0, scale: 0.98, y: 8 }}
-            key={inputActiveMode ?? 'chat'}
-            style={{ marginTop: inputActiveMode ? 0 : 24 }}
-            transition={{
-              duration: 0.2,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-          >
-            <Flexbox gap={24}>
-              <SuggestQuestions mode={inputActiveMode} />
-              <CommunityRecommend mode={inputActiveMode} />
-            </Flexbox>
-          </m.div>
-        )}
-      </AnimatePresence>
     </Flexbox>
   );
 };
