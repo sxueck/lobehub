@@ -76,11 +76,11 @@ const StarterList = memo(() => {
         titleKey: 'starter.write',
       },
       {
+        hot: true,
         icon: ImageIcon,
         key: 'image',
         titleKey: 'starter.imageGeneration',
       },
-
       // {
       //   disabled: true,
       //   icon: MicroscopeIcon,
@@ -94,7 +94,7 @@ const StarterList = memo(() => {
   const handleClick = useCallback(
     (key: StarterMode) => {
       if (key === 'image') {
-        navigate('/image');
+        navigate('/image?model=gpt-image-2');
         return;
       }
 

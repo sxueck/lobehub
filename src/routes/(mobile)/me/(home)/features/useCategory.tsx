@@ -1,13 +1,6 @@
 import { LOBE_CHAT_CLOUD, UTM_SOURCE } from '@lobechat/business-const';
 import { OFFICIAL_URL } from '@lobechat/const';
-import {
-  Book,
-  CircleUserRound,
-  Cloudy,
-  Feather,
-  FileClockIcon,
-  Settings2,
-} from 'lucide-react';
+import { Book, CircleUserRound, Cloudy, Feather, FileClockIcon, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
