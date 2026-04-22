@@ -25,6 +25,7 @@ import { type ResolvedAgentConfig } from '@/services/chat/mecha';
 import { resolveAgentConfig } from '@/services/chat/mecha';
 import { localFileService } from '@/services/electron/localFileService';
 import { messageService } from '@/services/message';
+import { aiModelSelectors, getAiInfraStoreState } from '@/store/aiInfra';
 import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { createAgentExecutors } from '@/store/chat/agents/createAgentExecutors';
@@ -500,10 +501,16 @@ export class StreamingExecutorActionImpl {
     // ===========================================
     log('[internal_execAgentRuntime] Creating agent runtime with config', modelRuntimeConfig);
 
+    const contextWindowTokens = aiModelSelectors.modelContextWindowTokens(
+      agentConfigData.model,
+      agentConfigData.provider!,
+    )(getAiInfraStoreState());
+
     const agent = new GeneralChatAgent({
       agentConfig: { maxSteps: 1000 },
       compressionConfig: {
-        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true, // Default to enabled
+        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true,
+        maxWindowToken: contextWindowTokens,
       },
       dynamicInterventionAudits,
       operationId: `${messageKey}/${params.parentMessageId}`,
