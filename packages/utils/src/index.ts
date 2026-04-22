@@ -18,7 +18,6 @@ export * from './object';
 export * from './platform';
 export * from './pricing';
 export * from './safeParseJSON';
-export * from './sanitizeToolCallArguments';
 export * from './sleep';
 export * from './uriParser';
 export * from './url';

@@ -12,8 +12,6 @@ import AgentIdSync from './AgentIdSync';
 
 const useParamsMock = vi.hoisted(() => vi.fn());
 const useSearchParamsMock = vi.hoisted(() => vi.fn());
-const useNavigateMock = vi.hoisted(() => vi.fn());
-const useLocationMock = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -21,8 +19,6 @@ vi.mock('react-router-dom', async () => {
 
   return {
     ...actual,
-    useLocation: useLocationMock,
-    useNavigate: () => useNavigateMock,
     useParams: useParamsMock,
     useSearchParams: useSearchParamsMock,
   };
@@ -32,9 +28,6 @@ describe('AgentIdSync', () => {
   beforeEach(() => {
     useParamsMock.mockReset();
     useSearchParamsMock.mockReset();
-    useNavigateMock.mockReset();
-    useLocationMock.mockReset();
-    useLocationMock.mockReturnValue({ pathname: '/agent/agent-1' });
 
     useChatStore.setState(
       {
@@ -57,7 +50,6 @@ describe('AgentIdSync', () => {
     expect(useChatStore.getState().showPortal).toBe(true);
 
     useParamsMock.mockReturnValue({ aid: 'agent-2' });
-    useLocationMock.mockReturnValue({ pathname: '/agent/agent-2' });
     rerender(<AgentIdSync />);
 
     expect(useChatStore.getState().activeTopicId).toBeNull();
@@ -72,7 +64,6 @@ describe('AgentIdSync', () => {
     const { rerender } = render(<AgentIdSync />);
 
     useParamsMock.mockReturnValue({ aid: 'agent-2' });
-    useLocationMock.mockReturnValue({ pathname: '/agent/agent-2' });
     rerender(<AgentIdSync />);
 
     expect(useChatStore.getState().portalStack).toEqual([]);

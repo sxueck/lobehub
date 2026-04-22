@@ -1,4 +1,3 @@
-import { sanitizeToolCallArguments } from '@lobechat/utils';
 import debug from 'debug';
 
 import { BaseProcessor } from '../base/BaseProcessor';
@@ -130,15 +129,11 @@ export class ToolCallProcessor extends BaseProcessor {
       return message;
     }
 
-    // Convert tools to tool_calls format.
-    // Sanitize `arguments` as a last line of defense against historical messages
-    // whose tool_calls arguments are invalid JSON (e.g. persisted before the
-    // server-side sanitizer landed, or produced by an older client). Strict
-    // providers like NVIDIA NIM otherwise 400 on the entire request. See LOBE-7761.
+    // Convert tools to tool_calls format
     const tool_calls = message.tools.map(
       (tool: any): MessageToolCall => ({
         function: {
-          arguments: sanitizeToolCallArguments(tool.arguments),
+          arguments: tool.arguments,
           name: this.config.genToolCallingName
             ? this.config.genToolCallingName(tool.identifier, tool.apiName, tool.type)
             : `${tool.identifier}.${tool.apiName}`,
