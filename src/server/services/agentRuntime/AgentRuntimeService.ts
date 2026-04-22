@@ -1333,7 +1333,7 @@ export class AgentRuntimeService {
   /**
    * Create Agent Runtime instance
    */
-  private async createAgentRuntime({
+private async createAgentRuntime({
     metadata,
     operationId,
     stepIndex,
@@ -1342,21 +1342,24 @@ export class AgentRuntimeService {
     operationId: string;
     stepIndex: number;
   }) {
-    const contextWindowTokens =
-      metadata?.modelRuntimeConfig?.model && metadata?.modelRuntimeConfig?.provider
-        ? await getModelPropertyWithFallback<number | undefined>(
-            metadata.modelRuntimeConfig.model,
-            'contextWindowTokens',
-            metadata.modelRuntimeConfig.provider,
-          )
-        : undefined;
+    const model = metadata?.modelRuntimeConfig?.model || metadata?.agentConfig?.model;
+    const provider = metadata?.modelRuntimeConfig?.provider || metadata?.agentConfig?.provider;
+
+    let contextWindowTokens: number | undefined;
+    if (model && provider) {
+      contextWindowTokens = await getModelPropertyWithFallback<number | undefined>(
+        model,
+        'contextWindowTokens',
+        provider,
+      );
+    }
 
     // Create Agent instance — use custom factory if provided, otherwise default to GeneralChatAgent
     const generalConfig = {
       agentConfig: metadata?.agentConfig,
       compressionConfig: {
         enabled: metadata?.agentConfig?.chatConfig?.enableContextCompression ?? true,
-        maxWindowToken: contextWindowTokens ?? undefined,
+        maxWindowToken: contextWindowTokens,
       },
       dynamicInterventionAudits,
       modelRuntimeConfig: metadata?.modelRuntimeConfig,

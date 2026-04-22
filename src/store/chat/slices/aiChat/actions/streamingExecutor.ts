@@ -28,6 +28,7 @@ import { type ResolvedAgentConfig } from '@/services/chat/mecha';
 import { composeEnabledTools, resolveAgentConfig } from '@/services/chat/mecha';
 import { localFileService } from '@/services/electron/localFileService';
 import { messageService } from '@/services/message';
+import { aiModelSelectors, getAiInfraStoreState } from '@/store/aiInfra';
 import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { aiModelSelectors } from '@/store/aiInfra/selectors';
@@ -598,11 +599,16 @@ export class StreamingExecutorActionImpl {
       provider!,
     )(getAiInfraStoreState());
 
+    const contextWindowTokens = aiModelSelectors.modelContextWindowTokens(
+      agentConfigData.model,
+      agentConfigData.provider!,
+    )(getAiInfraStoreState());
+
     const agent = new GeneralChatAgent({
       agentConfig: { maxSteps: 1000 },
       compressionConfig: {
-        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true, // Default to enabled
-        maxWindowToken: contextWindowTokens ?? undefined,
+        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true,
+        maxWindowToken: contextWindowTokens,
       },
       dynamicInterventionAudits,
       operationId: `${messageKey}/${params.parentMessageId}`,
