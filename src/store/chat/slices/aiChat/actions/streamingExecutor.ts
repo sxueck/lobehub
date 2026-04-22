@@ -28,6 +28,7 @@ import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { createAgentExecutors } from '@/store/chat/agents/createAgentExecutors';
 import { type ChatStore, useChatStore } from '@/store/chat/store';
+import { aiModelSelectors, getAiInfraStoreState } from '@/store/aiInfra';
 import { pageAgentRuntime } from '@/store/tool/slices/builtin/executors/lobe-page-agent';
 import { type StoreSetter } from '@/store/types';
 import { toolInterventionSelectors } from '@/store/user/selectors';
@@ -466,10 +467,16 @@ export class StreamingExecutorActionImpl {
     // ===========================================
     log('[internal_execAgentRuntime] Creating agent runtime with config', modelRuntimeConfig);
 
+    const contextWindowTokens = aiModelSelectors.modelContextWindowTokens(
+      agentConfigData.model,
+      agentConfigData.provider!,
+    )(getAiInfraStoreState());
+
     const agent = new GeneralChatAgent({
       agentConfig: { maxSteps: 1000 },
       compressionConfig: {
-        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true, // Default to enabled
+        enabled: agentConfigData.chatConfig?.enableContextCompression ?? true,
+        maxWindowToken: contextWindowTokens,
       },
       dynamicInterventionAudits,
       operationId: `${messageKey}/${params.parentMessageId}`,
