@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import useBusinessMeCells from '@/business/client/features/User/useBusinessMeCells';
 import { type CellProps } from '@/components/Cell';
 import { DOCUMENTS, FEEDBACK } from '@/const/index';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
