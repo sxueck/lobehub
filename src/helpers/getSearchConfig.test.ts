@@ -84,6 +84,31 @@ describe('getSearchConfig', () => {
     expect(result.useModelSearch).toBe(false);
   });
 
+  it('should disable search when searchMode is not configured', () => {
+    vi.mocked(chatConfigByIdSelectors.getChatConfigById).mockReturnValue(
+      () =>
+        ({
+          useModelBuiltinSearch: true,
+        }) as any,
+    );
+
+    vi.mocked(aiInfraSelectors.aiProviderSelectors.isProviderHasBuiltinSearch).mockReturnValue(
+      () => true,
+    );
+    vi.mocked(aiInfraSelectors.aiModelSelectors.isModelHasBuiltinSearch).mockReturnValue(
+      () => false,
+    );
+    vi.mocked(aiInfraSelectors.aiModelSelectors.isModelBuiltinSearchInternal).mockReturnValue(
+      () => false,
+    );
+
+    const result = getSearchConfig(model, provider);
+
+    expect(result.enabledSearch).toBe(false);
+    expect(result.useApplicationBuiltinSearchTool).toBe(false);
+    expect(result.useModelSearch).toBe(false);
+  });
+
   it('should prefer model search when available and enabled', () => {
     vi.mocked(chatConfigByIdSelectors.getChatConfigById).mockReturnValue(
       () =>

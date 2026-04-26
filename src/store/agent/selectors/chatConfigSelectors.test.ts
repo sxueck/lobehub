@@ -60,13 +60,13 @@ describe('agentChatConfigSelectors', () => {
       expect(agentChatConfigSelectors.agentSearchMode(state)).toBe('auto');
     });
 
-    it('should return "auto" as default', () => {
+    it('should return "off" as default', () => {
       const state = createState({
         activeAgentId: 'agent-1',
         agentMap: { 'agent-1': {} },
       });
 
-      expect(agentChatConfigSelectors.agentSearchMode(state)).toBe('auto');
+      expect(agentChatConfigSelectors.agentSearchMode(state)).toBe('off');
     });
   });
 

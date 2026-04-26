@@ -1,3 +1,5 @@
+import { DEFAULT_AGENT_CHAT_CONFIG } from '@lobechat/const';
+
 import { getAgentStoreState } from '@/store/agent';
 import { chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { getAiInfraStoreState } from '@/store/aiInfra';
@@ -36,7 +38,7 @@ export const getSearchConfig = (
   const chatConfig = chatConfigByIdSelectors.getChatConfigById(targetAgentId)(agentStoreState);
   const aiInfraStoreState = getAiInfraStoreState();
 
-  const enabledSearch = chatConfig.searchMode !== 'off';
+  const enabledSearch = (chatConfig.searchMode ?? DEFAULT_AGENT_CHAT_CONFIG.searchMode) !== 'off';
   const isProviderHasBuiltinSearch =
     aiProviderSelectors.isProviderHasBuiltinSearch(provider)(aiInfraStoreState);
   const isModelHasBuiltinSearch = aiModelSelectors.isModelHasBuiltinSearch(
@@ -49,9 +51,11 @@ export const getSearchConfig = (
   )(aiInfraStoreState);
 
   const useModelSearch =
-    ((isProviderHasBuiltinSearch || isModelHasBuiltinSearch) && chatConfig.useModelBuiltinSearch) ||
-    isModelBuiltinSearchInternal ||
-    false;
+    enabledSearch &&
+    (((isProviderHasBuiltinSearch || isModelHasBuiltinSearch) &&
+      chatConfig.useModelBuiltinSearch) ||
+      isModelBuiltinSearchInternal ||
+      false);
 
   const useApplicationBuiltinSearchTool = enabledSearch && !useModelSearch;
 

@@ -32,7 +32,7 @@ const getHistoryCountById =
   };
 
 const getSearchModeById = (agentId: string) => (s: AgentStoreState) =>
-  getChatConfigById(agentId)(s).searchMode || 'auto';
+  getChatConfigById(agentId)(s).searchMode || DEFAULT_AGENT_CHAT_CONFIG.searchMode;
 
 const isEnableSearchById = (agentId: string) => (s: AgentStoreState) =>
   getSearchModeById(agentId)(s) !== 'off';
