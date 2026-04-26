@@ -32,7 +32,7 @@ export const DEFAULT_AGENT_CHAT_CONFIG: LobeAgentChatConfig = {
   historyCount: 20,
   reasoningBudgetToken: 1024,
   searchFCModel: DEFAULT_AGENT_SEARCH_FC_MODEL,
-  searchMode: 'auto',
+  searchMode: 'off',
 };
 
 export const DEFAULT_AGENT_CONFIG: LobeAgentConfig = {

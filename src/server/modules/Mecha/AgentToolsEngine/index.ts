@@ -23,6 +23,7 @@ import {
   chatModeAllowedToolIds,
   defaultToolIds,
 } from '@lobechat/builtin-tools';
+import { DEFAULT_AGENT_CHAT_CONFIG } from '@lobechat/const';
 import { createEnableChecker, type LobeToolManifest } from '@lobechat/context-engine';
 import { ToolsEngine } from '@lobechat/context-engine';
 import { type RuntimeEnvMode, type RuntimePlatform } from '@lobechat/types';
@@ -166,7 +167,7 @@ export const createServerAgentToolsEngine = (
     agentConfig.chatConfig?.runtimeEnv?.runtimeMode?.[platform] ??
     (platform === 'desktop' ? 'local' : 'none');
 
-  const searchMode = agentConfig.chatConfig?.searchMode ?? 'auto';
+  const searchMode = agentConfig.chatConfig?.searchMode ?? DEFAULT_AGENT_CHAT_CONFIG.searchMode;
   const isSearchEnabled = searchMode !== 'off';
   const isChatMode = agentConfig.chatConfig?.enableAgentMode === false;
 

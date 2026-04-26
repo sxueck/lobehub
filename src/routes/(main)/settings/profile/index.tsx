@@ -35,9 +35,10 @@ const SkeletonRow = () => (
 
 const ProfileSetting = () => {
   const isLogin = useUserStore(authSelectors.isLogin);
-  const [userProfile, isUserLoaded] = useUserStore((s) => [
+  const [userProfile, isUserLoaded, isUserStateInit] = useUserStore((s) => [
     userProfileSelectors.userProfile(s),
     s.isLoaded,
+    s.isUserStateInit,
   ]);
   const isLoadedAuthProviders = useUserStore(authSelectors.isLoadedAuthProviders);
   const fetchAuthProviders = useUserStore((s) => s.fetchAuthProviders);
@@ -54,7 +55,9 @@ const ProfileSetting = () => {
   useFetchUserKlavisServers(enableKlavis);
 
   const isLoading =
-    !isUserLoaded || (isLogin && !isLoadedAuthProviders) || (enableKlavis && !isServersInit);
+    !isUserLoaded ||
+    (isLogin && (!isUserStateInit || !isLoadedAuthProviders)) ||
+    (enableKlavis && !isServersInit);
 
   useEffect(() => {
     if (isLogin) {

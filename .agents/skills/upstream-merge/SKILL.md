@@ -1,6 +1,6 @@
 ---
 name: upstream-merge
-description: "Controlled upstream synchronization workflow for maintaining sxueck/lobehub from lobehub/lobehub. Use whenever the user asks to merge, pull, rebase, sync, update from upstream, resolve upstream conflicts, force-with-lease push a rebased fork, or verify that a fork is aligned with lobehub/lobehub. This skill protects downstream commit intent, handles dirty-worktree preservation, and requires asking the user when upstream changes conflict with intentional local removals or custom behavior."
+description: 'Controlled upstream synchronization workflow for maintaining sxueck/lobehub from lobehub/lobehub. Use whenever the user asks to merge, pull, rebase, sync, update from upstream, resolve upstream conflicts, force-with-lease push a rebased fork, or verify that a fork is aligned with lobehub/lobehub. This skill protects downstream commit intent, handles dirty-worktree preservation, inspects conflict-side commits before resolving, and requires asking the user when upstream changes conflict with intentional local removals or custom behavior.'
 ---
 
 # Upstream Merge Governance
@@ -34,9 +34,10 @@ Use this skill for requests like:
 2. Prefer small, explicit Git operations that can be inspected and reversed by normal review.
 3. Never assume upstream is correct just because it is newer.
 4. Never assume downstream is correct when upstream fixes a bug or security issue; compare intent and impact.
-5. Ask the user when product intent conflicts, even if Git can auto-merge the files.
+5. Ask the user before resolving any explicit conflict marker. Include commit evidence and intent analysis in the question; never choose between valid product directions silently.
 6. Keep unrelated dirty working tree changes untouched.
 7. Treat push and post-push verification as part of the sync, because a successful local rebase is not enough if the fork remote still points at old history.
+8. Treat every conflict marker as a request to identify both the code diff and the commit intent that produced it before editing.
 
 ## Command Safety Notes
 
@@ -71,8 +72,8 @@ git log --oneline --decorate -20
 6. Capture the before-sync divergence so the user can see how far behind/ahead the fork is:
 
 ```bash
-git rev-list --left-right --count upstream/<branch>...HEAD
-git log --oneline --decorate --left-right --cherry-pick upstream/<branch>...HEAD
+git rev-list --left-right --count upstream/ < branch > ...HEAD
+git log --oneline --decorate --left-right --cherry-pick upstream/ < branch > ...HEAD
 ```
 
 Interpret `A B` from `rev-list --left-right --count upstream/<branch>...HEAD` as: `A` commits only on upstream, `B` commits only on the current branch.
@@ -112,6 +113,17 @@ git log --oneline -- <path>
 git show <commit> -- <path>
 ```
 
+For conflicts, also inspect side-specific commit history instead of relying only on the merged worktree:
+
+```bash
+git log --oneline --left-right --cherry-pick upstream/<branch>...HEAD -- <path>
+git log --oneline -- <path>
+git show <candidate-downstream-commit> -- <path>
+git show <candidate-upstream-commit> -- <path>
+```
+
+The goal is to summarize the intent behind each side in plain language, not just describe the text differences.
+
 ## Merge Strategy
 
 Use the least surprising strategy for the user's branch model:
@@ -133,8 +145,8 @@ git rebase --continue
 Repeat until Git reports that the rebase completed. After completion, verify the branch relationship:
 
 ```bash
-git rev-list --left-right --count upstream/<branch>...HEAD
-git merge-base --is-ancestor upstream/<branch> HEAD
+git rev-list --left-right --count upstream/ < branch > ...HEAD
+git merge-base --is-ancestor upstream/ < branch > HEAD
 ```
 
 The expected successful rebase shape is `0 N`: no missing upstream commits, with `N` downstream-only commits left on top.
@@ -153,19 +165,19 @@ For non-conflicting files that touch protected intent areas, compare upstream an
 
 Use this policy for every conflict or semantic collision:
 
-| Situation | Default action |
-| --- | --- |
-| Upstream bug fix clearly compatible with downstream intent | Keep upstream fix and preserve downstream customization |
-| Upstream refactor moves code that downstream customized | Port downstream intent onto the new structure |
-| Upstream reintroduces code that downstream intentionally removed | Ask the user before keeping or dropping it |
+| Situation                                                                                           | Default action                                                |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Upstream bug fix clearly compatible with downstream intent                                          | Keep upstream fix and preserve downstream customization       |
+| Upstream refactor moves code that downstream customized                                             | Port downstream intent onto the new structure                 |
+| Upstream reintroduces code that downstream intentionally removed                                    | Ask the user before keeping or dropping it                    |
 | Upstream changes behavior around ads, telemetry, billing, branding, auth, privacy, or feature flags | Ask the user if downstream intent is not obvious from commits |
-| Both sides implement different product behavior | Ask the user which intent should win |
-| Conflict is purely mechanical formatting/import drift | Resolve mechanically, then verify behavior |
-| Upstream security fix conflicts with downstream removal/customization | Explain the security impact and ask the user how to proceed |
+| Both sides implement different product behavior                                                     | Ask the user which intent should win                          |
+| Conflict is purely mechanical formatting/import drift                                               | Resolve mechanically, then verify behavior                    |
+| Upstream security fix conflicts with downstream removal/customization                               | Explain the security impact and ask the user how to proceed   |
 
 ## When To Ask The User
 
-Use the available user-question tool (`ask`, `question`, or the environment's equivalent) when intent conflicts. Do not continue by guessing.
+Use the available user-question tool (`ask`, `question`, or the environment's equivalent) before resolving any explicit conflict marker. Do not continue by guessing. Purely mechanical conflicts may be grouped into one question only when they share the same cause, same affected intent, and same proposed resolution.
 
 Ask in a compact multiple-choice form with:
 
@@ -186,7 +198,7 @@ Choose how to resolve it:
 3. Hybrid: keep upstream structural changes but leave the ad feature disabled
 ```
 
-Ask whenever any of these signals appear:
+Ask whenever any of these signals appear, and also ask for every explicit conflict even if the likely resolution looks mechanical:
 
 - A deleted downstream feature appears again in upstream
 - A downstream-disabled behavior becomes enabled again
@@ -194,16 +206,77 @@ Ask whenever any of these signals appear:
 - A conflict involves product policy rather than code mechanics
 - The commit history suggests the downstream change was deliberate, but the desired current behavior is unknown
 - The model would need to choose between two valid product directions
+- A conflict is tied to a downstream commit with an explicit intent-bearing message such as deleting ads, disabling examples, changing feature gates, branding, auth, billing, privacy, or default behavior
+- A conflict appears mechanical but the related commits have product-facing messages or touch product-facing files
+
+For each conflict question, include the relevant commit evidence and your intent judgment:
+
+```text
+Conflict in <file>:
+- Upstream side: <commit short sha + subject>; practical effect: <what changes>
+- Downstream side: <commit short sha + subject>; practical effect: <what changes>
+- Intent judgment: <mechanical / behavioral / downstream protected intent / upstream bugfix / unclear>
+- Risk: <what could break or be reintroduced>
+
+Choose how to resolve it:
+1. Preserve downstream intent: <effect>
+2. Accept upstream intent: <effect>
+3. Hybrid: <effect>
+```
 
 ## Conflict Resolution Workflow
 
-1. Classify each conflict as mechanical, behavioral, or intent conflict.
-2. Resolve mechanical conflicts directly when low risk.
-3. For behavioral conflicts, inspect both sides and the downstream commit history.
-4. For intent conflicts, ask the user before editing.
-5. Apply the chosen resolution with minimal edits.
-6. Re-run focused checks for touched areas.
-7. Review the final diff for accidental upstream reintroduction of removed behavior.
+Use tools in this order so conflict handling is repeatable and reviewable:
+
+1. List all unresolved files:
+
+```bash
+git diff --name-only --diff-filter=U
+```
+
+2. For each unresolved file, inspect the three Git index stages before deciding:
+
+```bash
+git show :1:<path>   # merge base
+git show :2:<path>   # ours / current downstream branch
+git show :3:<path>   # theirs / upstream side
+```
+
+3. Inspect the worktree conflict context with a file read and search for conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`). Do not edit before understanding the surrounding function or component.
+
+4. Identify likely intent-bearing commits for both sides:
+
+```bash
+git log --oneline --left-right --cherry-pick upstream/<branch>...HEAD -- <path>
+git log --oneline -- <path>
+git show <commit> -- <path>
+```
+
+5. Classify each conflict as mechanical, behavioral, or intent conflict:
+   - Mechanical: imports, formatting, renamed files, moved code with no behavior change.
+   - Behavioral: execution path, feature visibility, defaults, routing, model/provider availability, auth, billing, privacy, telemetry, ads, examples, or generated user-facing content.
+   - Intent conflict: either side's commit message or diff shows a deliberate product choice.
+
+6. Ask the user with commit evidence and intent judgment before editing any conflict. Do this even when the recommended option is obvious; the user's choice is the authority for preserving downstream intent. If several conflict hunks are purely mechanical and have the same cause, ask once with the grouped file list and shared commit evidence.
+
+7. Apply the chosen resolution with the smallest manual edit. Use `apply_patch` for hand edits. Avoid whole-file rewrites unless the file is tiny and the final content has been inspected. Never use broad text replacement across conflict markers.
+
+8. After editing each file, verify it locally:
+
+```bash
+git diff --check
+git diff --name-only --diff-filter=U
+```
+
+Also search the resolved file for conflict markers. If markers remain, do not stage the file.
+
+9. Stage only resolved files:
+
+```bash
+git add <resolved-files>
+```
+
+10. Review the final staged diff for accidental upstream reintroduction of removed behavior before continuing the merge or rebase.
 
 ## Rebase Conflict Patterns From `canary` Sync
 

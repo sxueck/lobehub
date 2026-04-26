@@ -36,7 +36,6 @@ describe('UserUpdater', () => {
   });
 
   it('preserves user fields populated by useInitUserState (e.g. interests) when better-auth re-emits the session on tab focus', () => {
-    // Simulate the post-init state: useInitUserState has loaded interests etc.
     useUserStore.setState({
       user: {
         id: 'u1',
@@ -55,21 +54,15 @@ describe('UserUpdater', () => {
     expect(useUserStore.getState().user?.interests).toEqual(['内容创作', '编程']);
     expect(useUserStore.getState().user?.firstName).toBe('A');
 
-    // Simulate better-auth refetching on visibilitychange: same logical user,
-    // but `data` (and therefore `user`) is a fresh object reference.
     useSessionMock.mockReturnValue(sampleSession());
     rerender(<UserUpdater />);
 
-    // Regression: interests / firstName / latestName must NOT be wiped by the
-    // session sync. (LOBE-8597 — wiped interests caused the home daily-brief
-    // recommendation SWR key to reset and refetch with empty interestKeys.)
     expect(useUserStore.getState().user?.interests).toEqual(['内容创作', '编程']);
     expect(useUserStore.getState().user?.firstName).toBe('A');
     expect(useUserStore.getState().user?.latestName).toBe('lice');
   });
 
   it('drops the previous user profile fields when the session switches to a different account', () => {
-    // Simulate user A is signed in with profile fields populated.
     useUserStore.setState({
       user: {
         id: 'userA',
@@ -83,15 +76,11 @@ describe('UserUpdater', () => {
       },
     });
 
-    // Better-Auth refetch returns a different account directly (e.g. another
-    // tab signed in as user B with the same cookie jar). No intermediate
-    // signed-out state here.
     useSessionMock.mockReturnValue(
       sampleSession({ id: 'userB', email: 'b@c.com', name: 'Bob', username: 'bob' }),
     );
     render(<UserUpdater />);
 
-    // Profile fields tied to user A must NOT leak to user B's store entry.
     const user = useUserStore.getState().user;
     expect(user?.id).toBe('userB');
     expect(user?.email).toBe('b@c.com');
