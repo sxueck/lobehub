@@ -532,6 +532,26 @@ const opencodeZenChatModels: AIChatModelCard[] = [
   },
   {
     abilities: { files: true, functionCall: true, reasoning: true, vision: true },
+    contextWindowTokens: 1_050_000,
+    description: 'GPT-5.5 by OpenAI — newest frontier model for complex professional work and coding.',
+    displayName: 'GPT-5.5',
+    enabled: true,
+    id: 'gpt-5.5',
+    maxOutput: 128_000,
+    organization: 'OpenAI',
+    pricing: {
+      currency: 'USD',
+      units: [
+        { name: 'textInput', rate: 5, strategy: 'fixed', unit: 'millionTokens' },
+        { name: 'textOutput', rate: 30, strategy: 'fixed', unit: 'millionTokens' },
+        { name: 'textInput_cacheRead', rate: 0.5, strategy: 'fixed', unit: 'millionTokens' },
+      ],
+    },
+    releasedAt: '2026-04-23',
+    type: 'chat',
+  },
+  {
+    abilities: { files: true, functionCall: true, reasoning: true, vision: true },
     contextWindowTokens: 400_000,
     description: 'GPT-5.4 Mini by OpenAI — efficient model balancing cost and performance.',
     displayName: 'GPT-5.4 Mini',
