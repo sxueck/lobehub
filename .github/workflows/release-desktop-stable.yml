@@ -3,7 +3,7 @@ name: Release Desktop Stable
 # ============================================
 # Stable 频道发版工作流
 # ============================================
-# 触发条件: 发布不含 pre-release 后缀的 release (如 v2.0.0)
+# 触发条件: 桌面端已软剥离，默认不再响应 GitHub Release 自动发版
 #
 # 与 Beta 的区别:
 #   1. 仅响应 stable 版本 tag (不含任何 '-' 后缀)
@@ -21,8 +21,6 @@ name: Release Desktop Stable
 # ============================================
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:

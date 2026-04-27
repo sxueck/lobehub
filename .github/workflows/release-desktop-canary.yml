@@ -4,8 +4,8 @@ name: Release Desktop Canary
 # Canary 自动发版工作流
 # ============================================
 # 触发条件:
-#   1. canary 分支有 push (合入 PR) 且 commit 前缀为 style/feat/fix/refactor/release (支持 gitmoji)
-#   2. 手动触发 (workflow_dispatch)
+#   1. 桌面端已软剥离，默认不随 canary push 自动发版
+#   2. 仅保留手动触发 (workflow_dispatch)
 #
 # 并发策略:
 #   同一 workflow 仅保留最新一次运行，自动取消排队中的旧 build
@@ -17,9 +17,6 @@ name: Release Desktop Canary
 # ============================================
 
 on:
-  push:
-    branches:
-      - canary
   workflow_dispatch:
     inputs:
       force:
