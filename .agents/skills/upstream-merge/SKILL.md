@@ -1,6 +1,6 @@
 ---
 name: upstream-merge
-description: 'Controlled upstream synchronization workflow for maintaining sxueck/lobehub from lobehub/lobehub. Use whenever the user asks to merge, pull, rebase, sync, update from upstream, resolve upstream conflicts, force-with-lease push a rebased fork, or verify that a fork is aligned with lobehub/lobehub. This skill protects downstream commit intent, handles dirty-worktree preservation, inspects conflict-side commits before resolving, and requires asking the user when upstream changes conflict with intentional local removals or custom behavior.'
+description: 'Controlled upstream synchronization workflow for maintaining sxueck/lobehub from lobehub/lobehub. Use whenever the user asks to merge, pull, rebase, sync, selectively update from upstream, review upstream commits, resolve upstream conflicts, force-with-lease push a rebased fork, or verify that a fork is aligned with lobehub/lobehub. This skill first classifies upstream commits into selectable categories, asks the user which categories to merge, protects downstream commit intent, handles dirty-worktree preservation, inspects conflict-side commits before resolving, and requires asking the user when upstream changes conflict with intentional local removals or custom behavior.'
 ---
 
 # Upstream Merge Governance
@@ -26,6 +26,10 @@ Use this skill for requests like:
 - "pull latest lobehub/lobehub updates"
 - "resolve conflicts from upstream"
 - "rebase my fork on upstream"
+- "selectively update from upstream"
+- "classify recent upstream commits before merging"
+- "帮我选择性合并上游"
+- "先检查上游提交再决定合并哪些"
 - "上游更新了，帮我合并"
 
 ## Operating Principles
@@ -38,6 +42,7 @@ Use this skill for requests like:
 6. Keep unrelated dirty working tree changes untouched.
 7. Treat push and post-push verification as part of the sync, because a successful local rebase is not enough if the fork remote still points at old history.
 8. Treat every conflict marker as a request to identify both the code diff and the commit intent that produced it before editing.
+9. Default to selective update for upstream sync requests: classify candidate commits first, ask the user which categories to merge, then apply only the selected scope. Skip this gate only when the user explicitly asks for a full sync or a specific commit/PR.
 
 ## Command Safety Notes
 
@@ -77,6 +82,82 @@ git log --oneline --decorate --left-right --cherry-pick upstream/ < branch > ...
 ```
 
 Interpret `A B` from `rev-list --left-right --count upstream/<branch>...HEAD` as: `A` commits only on upstream, `B` commits only on the current branch.
+
+## Selective Update Gate
+
+Use this gate before every upstream merge/rebase by default. The goal is to reduce incompatibilities from high-frequency upstream commits by making the merge scope explicit. Skip the gate only when the user explicitly asks for a full sync or names exact commits/PRs to apply.
+
+1. Fetch and list candidate upstream commits without applying them:
+
+```bash
+git fetch upstream
+git log --format='%h%x09%ad%x09%an%x09%ae%x09%s' --date=short HEAD..upstream/<branch>
+git show --stat --format='commit %h%nAuthor: %an <%ae>%nSubject: %s%n' <candidate-commits>
+```
+
+2. Classify commits by practical impact, not only by commit prefix. A `style` or `docs` commit may still be high-risk if it deletes settings, rewrites routes, or changes runtime behavior.
+
+3. Group commits into these categories:
+
+| Category | Default recommendation | Typical signals |
+| --- | --- | --- |
+| Critical fixes | Merge soon | Security, data loss, runtime errors, provider protocol fixes, build blockers |
+| Runtime/model compatibility | Merge soon | `agent-runtime`, `model-runtime`, `context-engine`, provider SDK behavior, tool-call schema fixes |
+| Self-hosting and deployment | Case-by-case | Docker, env vars, auth, server config, database, cloud-only behavior |
+| Agent/task/bot architecture | Ask before merging | `agentSignal`, task lifecycle, QStash, bot routing, heterogeneous agent, workflow execution |
+| Product/UI behavior | Optional | conversation UX, command menu, settings UI, navigation, scroll state |
+| Provider/model catalog | Optional unless used | model cards, pricing, provider names, discount metadata |
+| Docs/chore/style | Usually defer | docs, comments, formatting, package version sync, visual-only style changes |
+| Conflict-prone downstream areas | Ask before merging | ads/promotions, examples, feature gates, branding, auth defaults, provider enablement, admin settings |
+
+4. Produce a short category report before applying changes. Include:
+
+- Category name and merge recommendation
+- Commit count and representative commit hashes
+- Why it matters for this fork
+- Expected conflict risk: low / medium / high
+- Known downstream intents that may be touched
+
+5. Ask the user to choose categories before merging. Use a compact multiple-choice question where possible:
+
+```text
+Upstream has <N> candidate commits. I grouped them by merge value and conflict risk.
+
+Choose what to merge now:
+1. Critical fixes + runtime/model compatibility only (recommended for stability)
+2. Add self-hosting/deployment changes too
+3. Add agent/task/bot architecture changes too
+4. Full upstream sync
+5. Do not merge yet; only report the classification
+```
+
+6. If the user chooses a subset, prefer cherry-picking mergeable commits or merge/rebase only an explicit integration branch that contains the chosen commits. Do not silently include unrelated upstream categories.
+
+7. If a chosen commit depends on deferred commits, explain the dependency and ask whether to include the dependency category, skip the commit, or do a full sync. Do not guess.
+
+8. If the requested subset is too intertwined to cherry-pick safely, propose a safer batch boundary such as "all runtime/model fixes from this date range" or "everything up to PR #<id> except docs/style".
+
+## Selective Merge Execution
+
+After the user chooses categories:
+
+1. Create or identify an integration path that keeps selection reviewable:
+
+```bash
+git switch -c sync/<branch>-selective-<date>
+```
+
+Use the existing branch only if the user explicitly asked to apply directly there.
+
+2. Apply chosen commits in chronological order when cherry-picking:
+
+```bash
+git cherry-pick <oldest-chosen-commit> ... <newest-chosen-commit>
+```
+
+3. Stop on the first conflict and follow the conflict resolution workflow. For subset updates, inspect whether the conflict comes from a deferred dependency before editing.
+
+4. After a successful subset update, report both selected and deferred categories so the user knows what was intentionally left behind.
 
 ## Gather Intent Before Merging
 
@@ -128,9 +209,11 @@ The goal is to summarize the intent behind each side in plain language, not just
 
 Use the least surprising strategy for the user's branch model:
 
-- If the user asks for merge, use `git merge upstream/<branch>`.
-- If the user asks for rebase, use `git rebase upstream/<branch>`.
-- If the user does not specify, prefer merge for a long-lived fork because it preserves the explicit upstream sync point.
+- If the user asks for selective update, category-based merging, commit review before merging, or a generic upstream merge, run the Selective Update Gate first and do not apply upstream changes until the user chooses categories.
+- If the user explicitly asks for full merge, use `git merge upstream/<branch>`.
+- If the user explicitly asks for full rebase, use `git rebase upstream/<branch>`.
+- If the user asks for full sync but does not specify merge or rebase, prefer merge for a long-lived fork because it preserves the explicit upstream sync point.
+- If the user only says upstream has new commits or asks whether to keep following upstream, treat it as selective update, not full sync.
 
 For a user-requested rebase, use this loop:
 
@@ -361,6 +444,7 @@ git stash pop
 
 When finished, summarize in Chinese for the user:
 
+- If selective update was used, which categories were selected and which categories were deferred
 - Which upstream branch was merged or rebased
 - The before/after upstream divergence counts, especially whether final state is `0 N`
 - Which downstream intents were preserved
