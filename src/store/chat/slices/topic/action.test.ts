@@ -983,11 +983,13 @@ describe('topic action', () => {
         'internal_updateTopicTitleInSummary',
       );
       const refreshTopicSpy = vi.spyOn(result.current, 'refreshTopic');
+      const updateTopicSpy = vi.spyOn(topicService, 'updateTopic');
 
       // Mock the `chatService.fetchPresetTaskResult` to simulate the AI response
       vi.spyOn(chatService, 'fetchPresetTaskResult').mockImplementation((params) => {
         if (params) {
-          params.onFinish?.('Summarized Title', { type: 'done' });
+          params.onMessageHandle?.({ text: 'This interim answer must not become the title', type: 'text' });
+          params.onFinish?.('{ "title": "Summarized Title" }', { type: 'done' });
         }
         return Promise.resolve(undefined);
       });
@@ -998,9 +1000,57 @@ describe('topic action', () => {
 
       // Verify that the title was updated and the topic was refreshed
       expect(updateTopicTitleInSummarySpy).toHaveBeenCalledWith(topicId, LOADING_FLAT);
+      expect(updateTopicTitleInSummarySpy).not.toHaveBeenCalledWith(
+        topicId,
+        'This interim answer must not become the title',
+      );
+      expect(updateTopicSpy).toHaveBeenCalledWith(topicId, { title: 'Summarized Title' });
       expect(refreshTopicSpy).toHaveBeenCalled();
 
       // TODO: need to test with fetchPresetTaskResult
+    });
+
+    it('should restore the previous title when title generation returns non-JSON text', async () => {
+      const topicId = 'topic-1';
+      const messages = [
+        { id: 'message-1', content: 'Why did this fail? Fix it now.' },
+      ] as UIChatMessage[];
+      const topics = [{ id: 'topic-1', title: 'Original Topic' }] as ChatTopic[];
+      const { result } = renderHook(() => useChatStore());
+
+      await act(async () => {
+        useChatStore.setState({
+          topicDataMap: {
+            [topicMapKey({ agentId: 'test' })]: {
+              items: topics,
+              total: topics.length,
+              currentPage: 0,
+              hasMore: false,
+              pageSize: 20,
+            },
+          },
+          activeAgentId: 'test',
+        });
+      });
+
+      const updateTopicTitleInSummarySpy = vi.spyOn(
+        result.current,
+        'internal_updateTopicTitleInSummary',
+      );
+      const updateTopicSpy = vi.spyOn(topicService, 'updateTopic');
+
+      vi.spyOn(chatService, 'fetchPresetTaskResult').mockImplementation((params) => {
+        params.onFinish?.('Here is how to fix the permission denied error...', { type: 'done' });
+        return Promise.resolve(undefined);
+      });
+
+      await act(async () => {
+        await result.current.summaryTopicTitle(topicId, messages);
+      });
+
+      expect(updateTopicTitleInSummarySpy).toHaveBeenCalledWith(topicId, LOADING_FLAT);
+      expect(updateTopicTitleInSummarySpy).toHaveBeenCalledWith(topicId, 'Original Topic');
+      expect(updateTopicSpy).not.toHaveBeenCalled();
     });
   });
   describe('createTopic', () => {

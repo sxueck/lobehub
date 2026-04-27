@@ -3,6 +3,7 @@
 import { chainSummaryTitle } from '@lobechat/prompts';
 import { type ChatTopicMetadata, type MessageMapScope, type UIChatMessage } from '@lobechat/types';
 import { TraceNameMap } from '@lobechat/types';
+import { safeParseJSON } from '@lobechat/utils';
 import isEqual from 'fast-deep-equal';
 import { t } from 'i18next';
 import { type SWRResponse } from 'swr';
@@ -34,6 +35,25 @@ const n = setNamespace('t');
 
 const SWR_USE_FETCH_TOPIC = 'SWR_USE_FETCH_TOPIC';
 const SWR_USE_SEARCH_TOPIC = 'SWR_USE_SEARCH_TOPIC';
+const SUMMARY_TITLE_MAX_LENGTH = 50;
+
+const parseSummaryTitle = (text: string) => {
+  const trimmed = text.trim();
+  const jsonStart = trimmed.indexOf('{');
+  const jsonEnd = trimmed.lastIndexOf('}');
+
+  if (jsonStart < 0 || jsonEnd <= jsonStart) return;
+
+  const parsed = safeParseJSON<{ title?: unknown }>(
+    trimmed.slice(jsonStart, jsonEnd + 1),
+  );
+  const title = typeof parsed?.title === 'string' ? parsed.title.trim() : '';
+
+  if (!title) return;
+
+  return title.replaceAll(/\s+/g, ' ').slice(0, SUMMARY_TITLE_MAX_LENGTH).trim();
+};
+
 type CronTopicsGroupWithJobInfo = {
   cronJob: unknown;
   cronJobId: string;
@@ -195,8 +215,6 @@ export class ChatTopicActionImpl {
 
     internal_updateTopicTitleInSummary(topicId, LOADING_FLAT);
 
-    let output = '';
-
     // Get current agent for topic
     const topicConfig = systemAgentSelectors.topic(useUserStore.getState());
 
@@ -206,19 +224,17 @@ export class ChatTopicActionImpl {
         internal_updateTopicTitleInSummary(topicId, topic.title);
       },
       onFinish: async (text) => {
-        await this.#get().internal_updateTopic(topicId, { title: text });
+        const title = parseSummaryTitle(text);
+
+        if (!title) {
+          internal_updateTopicTitleInSummary(topicId, topic.title);
+          return;
+        }
+
+        await this.#get().internal_updateTopic(topicId, { title });
       },
       onLoadingChange: (loading) => {
         internal_updateTopicLoading(topicId, loading);
-      },
-      onMessageHandle: (chunk) => {
-        switch (chunk.type) {
-          case 'text': {
-            output += chunk.text;
-          }
-        }
-
-        internal_updateTopicTitleInSummary(topicId, output);
       },
       params: merge(
         topicConfig,
