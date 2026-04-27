@@ -452,7 +452,7 @@ export const imageRouter = router({
         const providerContentPolicyMessage = await getProviderContentPolicyErrorMessage({
           error,
           provider,
-          trigger: RequestTrigger.Image,
+
           userId: ctx.userId,
         });
         const { errorType, errorMessage } = categorizeError(

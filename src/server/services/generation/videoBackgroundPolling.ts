@@ -111,7 +111,7 @@ export async function processBackgroundVideoPolling(
     const providerContentPolicyMessage = await getProviderContentPolicyErrorMessage({
       error,
       provider,
-      trigger: RequestTrigger.Video,
+
       userId,
     });
     if (providerContentPolicyMessage) {

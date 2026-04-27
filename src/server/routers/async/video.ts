@@ -272,7 +272,7 @@ export const videoRouter = router({
       const providerContentPolicyMessage = await getProviderContentPolicyErrorMessage({
         error,
         provider,
-        trigger: RequestTrigger.Video,
+
         userId: ctx.userId,
       });
 
