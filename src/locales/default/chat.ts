@@ -547,6 +547,7 @@ export default {
   'taskSchedule.weekdays.wed': 'Wed',
   'taskDetail.activities': 'Activities',
   'taskDetail.activitiesEmpty': 'No activity yet',
+  'taskDetail.artifacts': 'Artifacts',
   'taskDetail.activities.agentTag': 'Agent',
   'taskDetail.activities.fallback.brief': 'posted a brief',
   'taskDetail.activities.fallback.comment': 'left a comment',
