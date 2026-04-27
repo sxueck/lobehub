@@ -155,7 +155,7 @@ jobs:
 
   test-desktop:
     needs: check-duplicate-run
-    if: needs.check-duplicate-run.outputs.should_skip != 'true'
+    if: vars.DESKTOP_CI_ENABLED == 'true' && needs.check-duplicate-run.outputs.should_skip != 'true'
     name: Test Desktop App
 
     runs-on: ubuntu-latest

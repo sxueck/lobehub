@@ -3,16 +3,15 @@ name: Release Desktop Beta
 # ============================================
 # Beta 频道发版工作流
 # ============================================
-# 触发条件: 发布包含 pre-release 标识的 release
-# 如: v2.0.0-beta.1, v2.0.0-alpha.1, v2.0.0-rc.1
+# 触发条件: 桌面端已软剥离，默认不再响应 GitHub Release 自动发版
+# 如需恢复，可重新接入 release published 触发器
 #
 # 注意: Stable 版本 (如 v2.0.0) 由 release-desktop-stable.yml 处理
 # 注意: Nightly 版本已停用，不再参与 Desktop 发布流程
 # ============================================
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
