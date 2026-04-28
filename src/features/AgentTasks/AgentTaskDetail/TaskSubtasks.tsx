@@ -18,6 +18,7 @@ import TaskPriorityTag from '../features/TaskPriorityTag';
 import TaskStatusTag from '../features/TaskStatusTag';
 import TaskSubtaskProgressTag from '../features/TaskSubtaskProgressTag';
 import { useTaskItemContextMenu } from '../features/useTaskItemContextMenu';
+import AccordionArrowIcon from '../shared/AccordionArrowIcon';
 import { styles } from '../shared/style';
 
 type TaskStatus = 'backlog' | 'canceled' | 'completed' | 'failed' | 'paused' | 'running';
@@ -183,14 +184,9 @@ const TaskSubtasks = memo(() => {
                 <Text color={cssVar.colorTextSecondary} fontSize={13} weight={500}>
                   {t('taskDetail.subtasks')}
                 </Text>
-                <Icon
-                  color={cssVar.colorTextDescription}
-                  icon={ChevronDown}
-                  size={14}
-                  style={{
-                    transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                    transition: 'transform 200ms',
-                  }}
+                <AccordionArrowIcon
+                  isOpen={isExpanded}
+                  style={{ color: cssVar.colorTextDescription }}
                 />
               </Block>
               <TaskSubtaskProgressTag
