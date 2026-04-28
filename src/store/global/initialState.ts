@@ -39,8 +39,8 @@ export enum GroupSettingsTabs {
 }
 
 export enum SettingsTabs {
-  Admin = 'admin',
   About = 'about',
+  Admin = 'admin',
   Advanced = 'advanced',
   /** @deprecated Use ServiceModel instead */
   Agent = 'agent',
@@ -182,8 +182,18 @@ export interface SystemStatus {
   showImagePanel?: boolean;
   showImageTopicPanel?: boolean;
   showLeftPanel?: boolean;
+  /**
+   * Visibility of the PageEditor right-side agent panel (Copilot / History).
+   * Independent from `showRightPanel` so toggling it does not affect other pages.
+   */
+  showPageAgentPanel?: boolean;
   showRightPanel?: boolean;
   showSystemRole?: boolean;
+  /**
+   * Visibility of the Task layout right-side AgentTaskManager panel.
+   * Independent from `showRightPanel` so toggling it does not affect other pages.
+   */
+  showTaskAgentPanel?: boolean;
   showVideoPanel?: boolean;
   showVideoTopicPanel?: boolean;
   /**
@@ -322,8 +332,10 @@ export const INITIAL_STATUS = {
   showImagePanel: true,
   showImageTopicPanel: true,
   showLeftPanel: true,
+  showPageAgentPanel: true,
   showRightPanel: true,
   showSystemRole: false,
+  showTaskAgentPanel: false,
   showVideoPanel: true,
   showVideoTopicPanel: true,
   systemRoleExpandedMap: {},
