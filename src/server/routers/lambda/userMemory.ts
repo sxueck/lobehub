@@ -272,7 +272,7 @@ export const userMemoryRouter = router({
       }
 
       const { webhook, upstashWorkflowExtraHeaders } = parseMemoryExtractionConfig();
-      const baseUrl = webhook.baseUrl || appEnv.INTERNAL_APP_URL || appEnv.APP_URL;
+      const baseUrl = webhook.baseUrl || appEnv.APP_URL || appEnv.INTERNAL_APP_URL;
 
       try {
         const { workflowRunId } = await MemoryExtractionWorkflowService.triggerProcessUsers(

@@ -17,7 +17,7 @@ const USER_BATCH_SIZE = 20;
 
 const { webhook, upstashWorkflowExtraHeaders } = parseMemoryExtractionConfig();
 
-const resolveBaseUrl = () => webhook.baseUrl || appEnv.INTERNAL_APP_URL || appEnv.APP_URL;
+const resolveBaseUrl = () => webhook.baseUrl || appEnv.APP_URL || appEnv.INTERNAL_APP_URL;
 
 export const hourlyWorkflowHandler = async (
   context: WorkflowContext<MemoryExtractionHourlyWorkflowPayload>,

@@ -104,6 +104,39 @@ export class AsyncTaskModel {
     return result[0];
   };
 
+  markUserMemoryExtractionTopicFailed = async (taskId: string, message: string) => {
+    const completedExpr = sql<number>`COALESCE(((${asyncTasks.metadata}) -> 'progress' ->> 'completedTopics')::int, 0) + 1`;
+
+    const result = await this.db
+      .update(asyncTasks)
+      .set({
+        error: new AsyncTaskError(AsyncTaskErrorType.ServerError, message),
+        metadata: sql`
+          jsonb_set(
+            jsonb_set(
+              ${asyncTasks.metadata},
+              '{progress,completedTopics}',
+              to_jsonb(${completedExpr}),
+              true
+            ),
+            '{progress,totalTopics}',
+            COALESCE((${asyncTasks.metadata}) -> 'progress' -> 'totalTopics', 'null'::jsonb),
+            true
+          )
+        `,
+        status: AsyncTaskStatus.Error,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(asyncTasks.id, taskId), eq(asyncTasks.userId, this.userId)))
+      .returning({
+        error: asyncTasks.error,
+        metadata: asyncTasks.metadata,
+        status: asyncTasks.status,
+      });
+
+    return result[0];
+  };
+
   findByIds = async (taskIds: string[], type: AsyncTaskType): Promise<AsyncTaskSelectItem[]> => {
     let chunkTasks: AsyncTaskSelectItem[] = [];
 
