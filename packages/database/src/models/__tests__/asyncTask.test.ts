@@ -192,6 +192,39 @@ describe('AsyncTaskModel', () => {
     });
   });
 
+  describe('markUserMemoryExtractionTopicFailed', () => {
+    it('should mark task as error and count the failed topic as processed', async () => {
+      const { id } = await serverDB
+        .insert(asyncTasks)
+        .values({
+          metadata: {
+            progress: {
+              completedTopics: 0,
+              totalTopics: 2,
+            },
+            source: 'chat_topic',
+          },
+          status: AsyncTaskStatus.Processing,
+          type: AsyncTaskType.UserMemoryExtractionWithChatTopic,
+          userId,
+        })
+        .returning()
+        .then((res) => res[0]);
+
+      await asyncTaskModel.markUserMemoryExtractionTopicFailed(id, 'Topic workflow failed');
+
+      const task = await serverDB.query.asyncTasks.findFirst({ where: eq(asyncTasks.id, id) });
+      const metadata = task?.metadata as UserMemoryExtractionMetadata | undefined;
+
+      expect(metadata?.progress?.completedTopics).toBe(1);
+      expect(metadata?.progress?.totalTopics).toBe(2);
+      expect(task?.status).toBe(AsyncTaskStatus.Error);
+      expect(task?.error).toEqual(
+        new AsyncTaskError(AsyncTaskErrorType.ServerError, 'Topic workflow failed'),
+      );
+    });
+  });
+
   describe('findActiveByType', () => {
     it('should find active tasks with Pending status', async () => {
       await serverDB.insert(asyncTasks).values({

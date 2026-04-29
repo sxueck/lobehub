@@ -12,7 +12,8 @@ const mockFindById = vi.fn();
 
 const mockCountTopicsForMemoryExtractor = vi.fn();
 const mockDeleteAll = vi.fn();
-const { mockTriggerProcessUsers } = vi.hoisted(() => ({
+const { mockParseMemoryExtractionConfig, mockTriggerProcessUsers } = vi.hoisted(() => ({
+  mockParseMemoryExtractionConfig: vi.fn(),
   mockTriggerProcessUsers: vi.fn(),
 }));
 
@@ -51,10 +52,7 @@ vi.mock('@/envs/app', () => ({
 }));
 
 vi.mock('@/server/globalConfig/parseMemoryExtractionConfig', () => ({
-  parseMemoryExtractionConfig: vi.fn(() => ({
-    webhook: { baseUrl: 'https://internal.example.com' },
-    upstashWorkflowExtraHeaders: { 'x-test': 'ok' },
-  })),
+  parseMemoryExtractionConfig: mockParseMemoryExtractionConfig,
 }));
 
 vi.mock('@/server/services/memory/userMemory/extract', () => ({
@@ -78,6 +76,10 @@ const createCaller = (ctxOverrides: Partial<any> = {}) => {
 describe('userMemoryRouter.requestMemoryFromChatTopic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockParseMemoryExtractionConfig.mockReturnValue({
+      upstashWorkflowExtraHeaders: { 'x-test': 'ok' },
+      webhook: { baseUrl: 'https://internal.example.com' },
+    });
     mockTriggerProcessUsers.mockResolvedValue({ workflowRunId: 'workflow-run-1' });
   });
 
@@ -150,6 +152,26 @@ describe('userMemoryRouter.requestMemoryFromChatTopic', () => {
       id: 'new-task',
       status: AsyncTaskStatus.Pending,
     });
+  });
+
+  it('uses public app url before internal app url when webhook base url is not configured', async () => {
+    mockParseMemoryExtractionConfig.mockReturnValue({
+      upstashWorkflowExtraHeaders: { 'x-test': 'ok' },
+      webhook: {},
+    });
+    mockFindActiveByType.mockResolvedValue(undefined);
+    mockCreate.mockResolvedValue('new-task');
+    mockCountTopicsForMemoryExtractor.mockResolvedValue(1);
+
+    const caller = createCaller();
+    await caller.requestMemoryFromChatTopic({});
+
+    expect(mockTriggerProcessUsers).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseUrl: 'https://example.com',
+      }),
+      { extraHeaders: { 'x-test': 'ok' } },
+    );
   });
 
   it('returns success immediately when no topics', async () => {

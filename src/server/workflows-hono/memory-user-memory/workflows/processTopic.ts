@@ -201,10 +201,11 @@ export const processTopicWorkflow = createWorkflow<MemoryExtractionPayloadInput,
         const db = await getServerDB();
         const asyncTaskModel = new AsyncTaskModel(db, userId);
 
-        // NOTICE: Progress here means "topic processed", not "topic succeeded".
-        // The async task model now guards against flipping errored tasks back to success,
-        // so failed topics can still advance progress bookkeeping safely.
-        await asyncTaskModel.incrementUserMemoryExtractionProgress(payload.asyncTaskId);
+        await asyncTaskModel.markUserMemoryExtractionTopicFailed(
+          payload.asyncTaskId,
+          errorMessageFrom(failResponse) ||
+            `Memory extraction topic workflow failed with status ${failStatus}`,
+        );
 
         console.error(
           `[process-topic][failureFunction] marking async task as failed for user ${userId}, topic ${topicId}`,
