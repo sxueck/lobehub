@@ -15,6 +15,7 @@ import type {
   ChatToolPayload,
   ChatVideoItem,
   ConversationContext,
+  MessageMetadata,
   SendMessageParams,
   SendMessageServerResponse,
   UIChatMessage,
@@ -34,6 +35,7 @@ import { messageService } from '@/services/message';
 import { getAgentStoreState, useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, agentSelectors } from '@/store/agent/selectors';
 import { agentGroupByIdSelectors, getChatGroupStoreState } from '@/store/agentGroup';
+import { selectRuntimeType } from '@/store/chat/slices/aiChat/actions/agentDispatcher';
 import { resolveHeteroResume } from '@/store/chat/slices/aiChat/actions/heteroResume';
 import { type ChatStore } from '@/store/chat/store';
 import {
@@ -45,7 +47,6 @@ import {
   getCompressionCandidateMessageIds,
   hasRunningCompressionOperation,
 } from '@/store/chat/utils/compression';
-import { getFileStoreState } from '@/store/file/store';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
 import { type StoreSetter } from '@/store/types';
@@ -54,17 +55,20 @@ import { useUserMemoryStore } from '@/store/userMemory';
 import { dbMessageSelectors, displayMessageSelectors, topicSelectors } from '../../../selectors';
 import { messageMapKey } from '../../../utils/messageMapKey';
 import { topicMapKey } from '../../../utils/topicMapKey';
-import { AI_RUNTIME_OPERATION_TYPES } from '../../operation/types';
+import { AI_RUNTIME_OPERATION_TYPES, type QueuedFile } from '../../operation/types';
 import type { CommandSendOverrides, SingleAgentMentionDirectRoute } from './commandBus';
 import {
   hasNonActionContent,
   injectReferTopicNode,
+  mergeLocalFileReferences,
+  parseLocalFileReferencesFromEditorData,
   parseMentionedAgentsFromEditorData,
   parseSelectedSkillsFromEditorData,
   parseSelectedToolsFromEditorData,
   parseSingleAgentMentionDirectRoute,
   processCommands,
 } from './commandBus';
+import { materializeLocalSystemToolSnapshots } from './localSystemToolSnapshots';
 /**
  * Extended params for sendMessage with context
  */
@@ -118,6 +122,30 @@ const isAbortError = (error: unknown, abortController?: AbortController) =>
 const createAbortError = () =>
   Object.assign(new Error('Compression cancelled'), { name: 'AbortError' });
 
+const attachSendTimeMetadataToUserMessage = (
+  messages: UIChatMessage[],
+  userMessageId: string,
+  metadata: MessageMetadata | undefined,
+): UIChatMessage[] => {
+  if (!metadata) return messages;
+
+  let changed = false;
+  const nextMessages = messages.map((message) => {
+    if (message.id !== userMessageId) return message;
+
+    changed = true;
+    return {
+      ...message,
+      metadata: {
+        ...(message.metadata ?? undefined),
+        ...metadata,
+      },
+    };
+  });
+
+  return changed ? nextMessages : messages;
+};
+
 export class ConversationLifecycleActionImpl {
   readonly #get: () => ChatStore;
 
@@ -155,6 +183,7 @@ export class ConversationLifecycleActionImpl {
     message,
     editorData: inputEditorData,
     files,
+    metadata,
     onlyAddUserMessage,
     context,
     messages: inputMessages,
@@ -163,13 +192,17 @@ export class ConversationLifecycleActionImpl {
     onTopicCreated,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
-    const { internal_execAgentRuntime, mainInputEditor } = this.#get();
+    const { executeClientAgent, mainInputEditor } = this.#get();
+    const { agentId } = context;
     const selectedSkills = parseSelectedSkillsFromEditorData(editorData);
     const selectedTools = parseSelectedToolsFromEditorData(editorData);
     const mentionedAgents = parseMentionedAgentsFromEditorData(editorData);
 
+    const localFileReferences = mergeLocalFileReferences(
+      parseLocalFileReferencesFromEditorData(editorData),
+    );
+
     // Use context from params (required)
-    const { agentId } = context;
     // If creating new thread (isNew + scope='thread'), threadId will be created by server
     const isCreatingNewThread = context.isNew && context.scope === 'thread';
     // Build newThread params for server from new context format
@@ -183,6 +216,13 @@ export class ConversationLifecycleActionImpl {
         : undefined;
 
     if (!agentId) return;
+
+    const agentConfig = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
+    const heterogeneousProvider = agentConfig?.agencyConfig?.heterogeneousProvider;
+    const runtimeType = selectRuntimeType({
+      heterogeneousProvider,
+      isGatewayMode: this.#get().isGatewayModeEnabled(),
+    });
 
     // ── Command Bus: extract and process built-in commands from editorData ──
     const commandOverrides: CommandSendOverrides = processCommands({
@@ -254,6 +294,22 @@ export class ConversationLifecycleActionImpl {
     };
 
     const fileIdList = files?.map((f) => f.id);
+    const canMaterializeLocalFiles =
+      isDesktop &&
+      localFileReferences.length > 0 &&
+      !metadata?.localSystemToolSnapshots?.length &&
+      (!!heterogeneousProvider || !!agentConfig?.plugins?.includes('lobe-local-system'));
+    const localSystemToolSnapshots = canMaterializeLocalFiles
+      ? await materializeLocalSystemToolSnapshots(localFileReferences)
+      : [];
+    const userMessageMetadata =
+      metadata || pageSelections?.length || localSystemToolSnapshots.length
+        ? {
+            ...metadata,
+            ...(pageSelections?.length ? { pageSelections } : undefined),
+            ...(localSystemToolSnapshots.length ? { localSystemToolSnapshots } : undefined),
+          }
+        : undefined;
 
     // Enrich selected skills/tools with preloaded content, injected directly
     // via SelectedSkillInjector/SelectedToolInjector — no fake tool-call preload messages
@@ -284,6 +340,16 @@ export class ConversationLifecycleActionImpl {
       .find((op) => op && AI_RUNTIME_OPERATION_TYPES.includes(op.type) && op.status === 'running');
 
     if (runningAgentOp) {
+      // Snapshot file previews so the tray can render thumbnails AND the
+      // resumed sendMessage can rebuild imageList/videoList — by the time
+      // we drain, chatUploadFileList has long been cleared.
+      const filesPreview: QueuedFile[] = (files ?? []).map((f) => ({
+        id: f.id,
+        mimeType: f.file?.type ?? '',
+        name: f.file?.name ?? f.id,
+        url: f.fileUrl || f.base64Url || f.previewUrl || '',
+      }));
+
       this.#get().enqueueMessage(
         currentContextKey,
         {
@@ -291,7 +357,9 @@ export class ConversationLifecycleActionImpl {
           content: message,
           editorData: editorData ?? undefined,
           files: fileIdList,
+          filesPreview: filesPreview.length > 0 ? filesPreview : undefined,
           interruptMode: 'soft',
+          metadata: userMessageMetadata,
           createdAt: Date.now(),
         },
         runningAgentOp.id,
@@ -339,16 +407,18 @@ export class ConversationLifecycleActionImpl {
       },
     });
 
-    // Construct local media preview for server-mode temporary messages (S3 URL takes priority)
-    const filesInStore = getFileStoreState().chatUploadFileList;
-    const tempImages: ChatImageItem[] = filesInStore
+    // Construct local media preview for server-mode temporary messages (S3 URL takes priority).
+    // Use the captured `files` param (not the global file store) so the optimistic preview
+    // also works on the queue-drain path, where chatUploadFileList has already been cleared.
+    const filesForPreview = files ?? [];
+    const tempImages: ChatImageItem[] = filesForPreview
       .filter((f) => f.file?.type?.startsWith('image'))
       .map((f) => ({
         id: f.id,
         url: f.fileUrl || f.base64Url || f.previewUrl || '',
         alt: f.file?.name || f.id,
       }));
-    const tempVideos: ChatVideoItem[] = filesInStore
+    const tempVideos: ChatVideoItem[] = filesForPreview
       .filter((f) => f.file?.type?.startsWith('video'))
       .map((f) => ({
         id: f.id,
@@ -370,8 +440,8 @@ export class ConversationLifecycleActionImpl {
         threadId: operationContext.threadId ?? undefined,
         imageList: tempImages.length > 0 ? tempImages : undefined,
         videoList: tempVideos.length > 0 ? tempVideos : undefined,
-        // Pass pageSelections metadata for immediate display
-        metadata: pageSelections?.length ? { pageSelections } : undefined,
+        // Pass metadata for immediate display
+        metadata: userMessageMetadata,
       },
       { operationId, tempMessageId: tempId },
     );
@@ -402,9 +472,7 @@ export class ConversationLifecycleActionImpl {
 
     // ── External agent mode: delegate to heterogeneous agent CLI (desktop only) ──
     // Per-agent heterogeneousProvider config takes priority over the global gateway mode.
-    const agentConfig = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
-    const heterogeneousProvider = agentConfig?.agencyConfig?.heterogeneousProvider;
-    if (isDesktop && heterogeneousProvider) {
+    if (runtimeType === 'hetero' && heterogeneousProvider) {
       // Resolve cwd up-front so the new topic is bound to a project at
       // creation time. Otherwise the row stays NULL until the post-execution
       // metadata write — which never lands on cancel/error and meanwhile
@@ -444,6 +512,7 @@ export class ConversationLifecycleActionImpl {
               content: message,
               editorData,
               files: fileIdList,
+              metadata: userMessageMetadata,
               pageSelections,
               parentId,
             },
@@ -574,14 +643,18 @@ export class ConversationLifecycleActionImpl {
     }
 
     // ── Gateway mode: skip sendMessageInServer, let execAgentTask handle everything ──
-    if (this.#get().isGatewayModeEnabled()) {
-      this.#get().completeOperation(operationId);
-
+    if (runtimeType === 'gateway') {
       try {
+        // Pass `sendMessage` as `parentOperationId` so executeGatewayAgent
+        // completes it the instant phase-1 init finishes (after the child
+        // `execServerAgentRuntime` op starts). Without this hand-off the
+        // input loading state would drop during the execAgentTask round-trip
+        // and the send button would flicker back to "send".
         const result = await this.#get().executeGatewayAgent({
           context: operationContext,
           fileIds: fileIdList,
           message,
+          parentOperationId: operationId,
         });
 
         return {
@@ -589,6 +662,12 @@ export class ConversationLifecycleActionImpl {
           userMessageId: result.userMessageId,
         };
       } catch (e) {
+        // User cancelled during phase-1 init — `cancelOperation` already set
+        // the op to 'cancelled' and `executeGatewayAgent` cleaned up the
+        // server task. Don't clobber that with 'failed'.
+        const op = this.#get().operations[operationId];
+        if (op?.status === 'cancelled') return;
+
         console.error('[Gateway] Failed to start server-side agent:', e);
         this.#get().failOperation(operationId, {
           message: e instanceof Error ? e.message : 'Unknown error',
@@ -637,6 +716,7 @@ export class ConversationLifecycleActionImpl {
             content: persistedContent,
             editorData,
             files: fileIdList,
+            metadata: userMessageMetadata,
             pageSelections,
             parentId,
           },
@@ -659,7 +739,6 @@ export class ConversationLifecycleActionImpl {
             ? {
                 topicMessageIds: forceNewTopicFromExisting ? [] : messages.map((m) => m.id),
                 title: message.slice(0, 20) || t('defaultTitle', { ns: 'topic' }),
-                trigger: context.topicTrigger,
               }
             : undefined,
           agentId: operationContext.agentId,
@@ -721,6 +800,15 @@ export class ConversationLifecycleActionImpl {
 
       // Create final context with updated topicId/threadId from server response
       const finalContext = { ...operationContext, topicId: finalTopicId, threadId: finalThreadId };
+      data = {
+        ...data,
+        messages: attachSendTimeMetadataToUserMessage(
+          data.messages,
+          data.userMessageId,
+          userMessageMetadata,
+        ),
+      };
+
       this.#get().replaceMessages(data.messages, {
         context: finalContext,
         action: 'sendMessage/serverResponse',
@@ -924,7 +1012,7 @@ export class ConversationLifecycleActionImpl {
             agentRuntimeInitialContext,
           );
 
-          await internal_execAgentRuntime({
+          await executeClientAgent({
             context: execContext,
             initialContext: mergedAgentRuntimeInitialContext,
             messages: displayMessages,
@@ -1072,7 +1160,28 @@ export class ConversationLifecycleActionImpl {
           ]
         : currentMessages;
 
-      await this.#get().internal_execAgentRuntime({
+      // Sub-agent dispatch inherits the parent's runtime selection — a
+      // hetero/gateway parent must keep its sub-agents on the same path so
+      // events route through the same wire. See LOBE-8519.
+      const parentAgentConfig = context.agentId
+        ? agentSelectors.getAgentConfigById(context.agentId)(getAgentStoreState())
+        : undefined;
+      const runtimeType = selectRuntimeType({
+        heterogeneousProvider: parentAgentConfig?.agencyConfig?.heterogeneousProvider,
+        isGatewayMode: this.#get().isGatewayModeEnabled(),
+      });
+
+      // TODO(LOBE-8519 follow-up): only client sub-agent dispatch is
+      // implemented today. Gateway / hetero direct mentions fall through to
+      // client and will need their own runner once Step 2 lands.
+      if (runtimeType !== 'client') {
+        console.warn(
+          `[directMentionRoute] runtime=${runtimeType} not yet supported for sub-agent dispatch; ` +
+            'falling through to client mode',
+        );
+      }
+
+      await this.#get().executeClientAgent({
         context: { ...context, scope: 'sub_agent', subAgentId: targetAgentId },
         inPortalThread,
         messages: messagesWithInstruction,
@@ -1107,47 +1216,6 @@ export class ConversationLifecycleActionImpl {
       return `Failed to load agent "${agentId}": ${(error as Error).message}`;
     }
   }
-
-  continueGenerationMessage = async (id: string, messageId: string): Promise<void> => {
-    const message = dbMessageSelectors.getDbMessageById(id)(this.#get());
-    if (!message) return;
-
-    const { activeAgentId, activeTopicId, activeThreadId, activeGroupId } = this.#get();
-
-    // Create base context for continue operation (using global state)
-    const continueContext = {
-      agentId: activeAgentId,
-      topicId: activeTopicId,
-      threadId: activeThreadId ?? undefined,
-      groupId: activeGroupId,
-    };
-
-    // Create continue operation
-    const { operationId } = this.#get().startOperation({
-      type: 'continue',
-      context: { ...continueContext, messageId },
-    });
-
-    try {
-      const chats = displayMessageSelectors.mainAIChatsWithHistoryConfig(this.#get());
-
-      await this.#get().internal_execAgentRuntime({
-        context: continueContext,
-        messages: chats,
-        parentMessageId: id,
-        parentMessageType: message.role as 'assistant' | 'tool' | 'user',
-        parentOperationId: operationId,
-      });
-
-      this.#get().completeOperation(operationId);
-    } catch (error) {
-      this.#get().failOperation(operationId, {
-        type: 'ContinueError',
-        message: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    }
-  };
 
   /**
    * Execute context compression for /compact command.

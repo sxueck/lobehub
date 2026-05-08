@@ -3,6 +3,7 @@
 import { discord } from './discord/definition';
 import { feishu } from './feishu/definitions/feishu';
 import { lark } from './feishu/definitions/lark';
+import { line } from './line/definition';
 import { qq } from './qq/definition';
 import { PlatformRegistry } from './registry';
 import { slack } from './slack/definition';
@@ -25,16 +26,16 @@ export {
   type GroupSettings,
   makeDmPolicyField,
   makeGroupPolicyFields,
+  makeServerIdField,
+  makeUserIdField,
   normalizeAllowFromEntries,
   normalizeBotReplyLocale,
   RECEIVED_REACTION_EMOJI,
-  serverIdField,
   shouldAllowSender,
   shouldHandleDm,
   shouldHandleGroup,
   THINKING_REACTION_EMOJI,
   type UserAllowlist,
-  userIdField,
   validateAccessSettings,
   WORKING_REACTION_EMOJI,
 } from './const';
@@ -73,6 +74,7 @@ export {
 export { discord } from './discord/definition';
 export { feishu } from './feishu/definitions/feishu';
 export { lark } from './feishu/definitions/lark';
+export { line } from './line/definition';
 export { qq } from './qq/definition';
 export { slack } from './slack/definition';
 export { telegram } from './telegram/definition';
@@ -87,3 +89,4 @@ platformRegistry.register(feishu);
 platformRegistry.register(lark);
 platformRegistry.register(qq);
 platformRegistry.register(wechat);
+platformRegistry.register(line);

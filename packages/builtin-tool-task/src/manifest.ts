@@ -20,6 +20,11 @@ export const TaskManifest: BuiltinToolManifest = {
             description: 'Detailed instruction for what the task should accomplish.',
             type: 'string',
           },
+          assigneeAgentId: {
+            description:
+              'Optional agent ID to assign the task to. In task management context, omit it to create an unassigned task.',
+            type: 'string',
+          },
           name: {
             description: 'A short, descriptive name for the task.',
             type: 'string',
@@ -45,13 +50,63 @@ export const TaskManifest: BuiltinToolManifest = {
     },
     {
       description:
-        'List tasks. Without any filters, returns top-level unfinished tasks of the current agent. If you provide any filter, omitted filters are not applied implicitly.',
+        'Create multiple tasks in a single call. Prefer this over multiple createTask calls when planning a batch of related tasks (e.g. all subtasks under one parent, or all chapters of an outline). Each item supports the same fields as createTask. Items are created sequentially in array order; failures on individual items do not abort the batch.',
+      name: TaskApiName.createTasks,
+      parameters: {
+        properties: {
+          tasks: {
+            description:
+              'Array of tasks to create. Each item is the same shape as the createTask parameters (name + instruction required, other fields optional).',
+            items: {
+              properties: {
+                instruction: {
+                  description: 'Detailed instruction for what the task should accomplish.',
+                  type: 'string',
+                },
+                assigneeAgentId: {
+                  description:
+                    'Optional agent ID to assign the task to. In task management context, omit it to create an unassigned task.',
+                  type: 'string',
+                },
+                name: {
+                  description: 'A short, descriptive name for the task.',
+                  type: 'string',
+                },
+                parentIdentifier: {
+                  description:
+                    'Identifier of the parent task (e.g. "TASK-1"). If provided, the new task becomes a subtask.',
+                  type: 'string',
+                },
+                priority: {
+                  description:
+                    'Priority level: 0=none, 1=urgent, 2=high, 3=normal, 4=low. Default is 0.',
+                  type: 'number',
+                },
+                sortOrder: {
+                  description:
+                    'Sort order within parent task. Lower values appear first. Use to control display order.',
+                  type: 'number',
+                },
+              },
+              required: ['name', 'instruction'],
+              type: 'object',
+            },
+            type: 'array',
+          },
+        },
+        required: ['tasks'],
+        type: 'object',
+      },
+    },
+    {
+      description:
+        'List tasks. Without any filters, returns top-level unfinished tasks. In agent conversations it defaults to the current agent; in task manager context it spans all agents. If you provide any filter, omitted filters are not applied implicitly.',
       name: TaskApiName.listTasks,
       parameters: {
         properties: {
           assigneeAgentId: {
             description:
-              'Restrict to tasks assigned to this agent. When omitted, no assignee filter is applied unless listTasks is called without any filters, which defaults to the current agent.',
+              'Restrict to tasks assigned to this agent. When omitted, no assignee filter is applied unless listTasks is called without any filters in an agent conversation, which defaults to the current agent.',
             type: 'string',
           },
           limit: { description: `Max 1-100. Default ${DEFAULT_LIST_TASK_LIMIT}.`, type: 'number' },
@@ -107,6 +162,10 @@ export const TaskManifest: BuiltinToolManifest = {
             items: { type: 'string' },
             type: 'array',
           },
+          assigneeAgentId: {
+            description: 'Assign the task to this agent ID. Pass null to clear the assignee.',
+            type: ['string', 'null'],
+          },
           description: {
             description:
               'Human-readable description (displayed in UI). Separate from instruction, which guides the agent.',
@@ -140,7 +199,49 @@ export const TaskManifest: BuiltinToolManifest = {
     },
     {
       description:
-        "Update a task's status. Use to mark tasks as completed, canceled, paused, resumed, or failed. If identifier is omitted, this only works when there is a current task context.",
+        'Trigger an actual run of a task — this kicks off the assigned agent in a new (or continued) topic. Use this to START tasks; do NOT use updateTaskStatus(running) to start a task, that only flips the status flag without actually executing anything. The task must already have an assigneeAgentId; if not, edit the task to assign one first. Will fail with a CONFLICT-style error if the task already has a running topic (cancel it first or pass continueTopicId).',
+      name: TaskApiName.runTask,
+      parameters: {
+        properties: {
+          continueTopicId: {
+            description:
+              'Optional id of an existing topic to continue. When omitted, a new topic is created.',
+            type: 'string',
+          },
+          identifier: {
+            description: 'The task identifier to run (e.g. "TASK-1").',
+            type: 'string',
+          },
+          prompt: {
+            description:
+              'Optional extra prompt prepended to the task instruction for this run only.',
+            type: 'string',
+          },
+        },
+        required: ['identifier'],
+        type: 'object',
+      },
+    },
+    {
+      description:
+        'Trigger runs for multiple tasks in a single call. Prefer this over multiple runTask calls when starting a batch of related subtasks (e.g. all subtasks you just created under one parent). Each task is started sequentially in array order; failures on individual tasks do not abort the batch.',
+      name: TaskApiName.runTasks,
+      parameters: {
+        properties: {
+          identifiers: {
+            description:
+              'Identifiers of tasks to run, in execution order (e.g. ["TASK-1", "TASK-2"]).',
+            items: { type: 'string' },
+            type: 'array',
+          },
+        },
+        required: ['identifiers'],
+        type: 'object',
+      },
+    },
+    {
+      description:
+        "Update a task's status. Use to mark tasks as completed, canceled, paused, resumed, or failed. To START a task (transition into running), use runTask — it actually launches the agent. updateTaskStatus only flips the status flag without execution. If identifier is omitted, this only works when there is a current task context.",
       name: TaskApiName.updateTaskStatus,
       parameters: {
         properties: {

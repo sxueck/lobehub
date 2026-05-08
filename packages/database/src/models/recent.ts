@@ -14,14 +14,14 @@ export interface RecentDbItem {
   updatedAt: Date;
 }
 
-// Mirrors `MAIN_SIDEBAR_EXCLUDE_TRIGGERS` in `src/const/topic.ts`. System-trigger
-// topics live in their own surfaces (Task Manager, cron, eval, task runs) and
-// would clutter the main "Recent" list.
+// Mirrors `MAIN_SIDEBAR_EXCLUDE_TRIGGERS` in `src/const/topic.ts` plus the
+// legacy `task_manager` trigger from the previous Task Manager panel.
+// System-trigger topics live in their own surfaces and would clutter Recent.
 const SYSTEM_TOPIC_TRIGGERS = ['cron', 'eval', 'task_manager', 'task'];
 
-// Excluded so file uploads and web-browsing tool scrapes don't surface as
-// "recent docs"; only user-authored pages ('api') and legacy 'topic' rows remain.
-const TOOL_DOCUMENT_SOURCE_TYPES = ['file', 'web'] as const;
+// Excluded so tool-owned document rows don't surface as generic recent docs;
+// only user-authored pages ('api') and legacy 'topic' rows remain.
+const TOOL_DOCUMENT_SOURCE_TYPES = ['agent', 'agent-signal', 'file', 'web'] as const;
 
 const TASK_FINAL_STATUSES = ['completed', 'canceled'];
 

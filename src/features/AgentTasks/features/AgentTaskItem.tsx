@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTaskStore } from '@/store/task';
 import type { TaskListItem } from '@/store/task/slices/list/initialState';
 
-import TaskScheduleConfig from '../AgentTaskDetail/TaskScheduleConfig';
 import AssigneeAgentSelector from './AssigneeAgentSelector';
 import AssigneeAvatar from './AssigneeAvatar';
 import { formatTaskItemDate } from './formatTaskItemDate';
@@ -37,7 +36,7 @@ const toTaskStatus = (status: string): TaskStatus =>
   TASK_STATUS_SET.has(status as TaskStatus) ? (status as TaskStatus) : 'backlog';
 
 const AgentTaskItem = memo<TaskItemProps>(({ task, variant = 'default' }) => {
-  const { t } = useTranslation('discover');
+  const { t } = useTranslation('common');
   const { t: tChat } = useTranslation('chat');
   const useFetchTaskDetail = useTaskStore((s) => s.useFetchTaskDetail);
   useFetchTaskDetail(task.identifier);
@@ -120,23 +119,19 @@ const AgentTaskItem = memo<TaskItemProps>(({ task, variant = 'default' }) => {
   );
 
   const scheduleNode = task.automationMode ? (
-    <TaskScheduleConfig
-      currentInterval={taskDetail?.heartbeat?.interval ?? 0}
-      taskId={task.identifier}
-    >
-      <TaskTriggerTag
-        heartbeatInterval={taskDetail?.heartbeat?.interval}
-        schedulePattern={task.schedulePattern}
-        scheduleTimezone={task.scheduleTimezone}
-      />
-    </TaskScheduleConfig>
+    <TaskTriggerTag
+      automationMode={task.automationMode}
+      heartbeatInterval={taskDetail?.heartbeat?.interval}
+      schedulePattern={task.schedulePattern}
+      scheduleTimezone={task.scheduleTimezone}
+    />
   ) : null;
 
   const timeNode = time ? (
     <Text
       align={'right'}
       fontSize={12}
-      style={{ whiteSpace: 'nowrap', width: variant === 'compact' ? undefined : 76 }}
+      style={{ whiteSpace: 'nowrap', width: variant === 'compact' ? undefined : 48 }}
       type={'secondary'}
     >
       {time}

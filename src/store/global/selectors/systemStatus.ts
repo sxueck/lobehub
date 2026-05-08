@@ -1,5 +1,9 @@
-import { type GlobalState } from '../initialState';
-import { INITIAL_STATUS } from '../initialState';
+import type { GlobalState, ModelDetailPanelExpandedKey } from '../initialState';
+import {
+  DEFAULT_HOME_SIDEBAR_EXPANDED_KEYS,
+  DEFAULT_MODEL_DETAIL_PANEL_EXPANDED_KEYS,
+  INITIAL_STATUS,
+} from '../initialState';
 
 export const systemStatus = (s: GlobalState) => s.status;
 
@@ -43,11 +47,15 @@ export const DEFAULT_HIDDEN_SECTIONS: string[] = ['memory'];
 const hiddenSidebarSections = (s: GlobalState): string[] =>
   s.status.hiddenSidebarSections ?? DEFAULT_HIDDEN_SECTIONS;
 
+const sidebarExpandedKeys = (s: GlobalState): string[] =>
+  s.status.sidebarExpandedKeys ?? DEFAULT_HOME_SIDEBAR_EXPANDED_KEYS;
+
 export const DEFAULT_SIDEBAR_ITEMS: string[] = [
   'tasks',
   'pages',
   'recents',
   'agent',
+  'image',
   'community',
   'resource',
   'memory',
@@ -174,6 +182,8 @@ const showImageTopicPanel = (s: GlobalState) => s.status.showImageTopicPanel;
 const hidePWAInstaller = (s: GlobalState) => s.status.hidePWAInstaller;
 const isShowCredit = (s: GlobalState) => s.status.isShowCredit;
 const language = (s: GlobalState) => s.status.language || 'auto';
+const modelDetailPanelExpandedKeys = (s: GlobalState): ModelDetailPanelExpandedKey[] =>
+  s.status.modelDetailPanelExpandedKeys ?? [...DEFAULT_MODEL_DETAIL_PANEL_EXPANDED_KEYS];
 const modelSwitchPanelGroupMode = (s: GlobalState) =>
   s.status.modelSwitchPanelGroupMode || 'byProvider';
 const modelSwitchPanelWidth = (s: GlobalState) => s.status.modelSwitchPanelWidth || 460;
@@ -228,6 +238,8 @@ const isBannerDismissed =
 const tokenDisplayFormatShort = (s: GlobalState) =>
   s.status.tokenDisplayFormatShort !== undefined ? s.status.tokenDisplayFormatShort : true;
 
+const homeSelectedAgentId = (s: GlobalState) => s.status.homeSelectedAgentId;
+
 export const systemStatusSelectors = {
   agentBuilderPanelWidth,
   agentPageSize,
@@ -240,6 +252,7 @@ export const systemStatusSelectors = {
   groupAgentBuilderPanelWidth,
   hiddenSidebarSections,
   hidePWAInstaller,
+  homeSelectedAgentId,
   imagePanelWidth,
   imageTopicViewMode,
   imageTopicPanelWidth,
@@ -252,6 +265,7 @@ export const systemStatusSelectors = {
   leftPanelWidth,
   mobileShowPortal,
   mobileShowTopic,
+  modelDetailPanelExpandedKeys,
   modelSwitchPanelGroupMode,
   modelSwitchPanelWidth,
   pageAgentPanelWidth,
@@ -262,6 +276,7 @@ export const systemStatusSelectors = {
   taskKanbanHiddenColumns,
   taskKanbanHiddenPanelCollapsed,
   taskListViewOptions,
+  sidebarExpandedKeys,
   sidebarItems,
   sessionGroupKeys,
   showChatHeader,

@@ -52,7 +52,7 @@ const createStore: CreateStore =
 
 //  ===============  Implement useStore ============ //
 
-let store: StoreApi<ServerConfigStore>;
+let store: StoreApi<ServerConfigStore> | undefined;
 
 declare global {
   interface Window {

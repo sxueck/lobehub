@@ -10,6 +10,7 @@ import { fileEnv } from '@/envs/file';
 import { imageEnv } from '@/envs/image';
 import { knowledgeEnv } from '@/envs/knowledge';
 import { langfuseEnv } from '@/envs/langfuse';
+import { toolsEnv } from '@/envs/tools';
 import { parseSSOProviders } from '@/libs/better-auth/utils/server';
 import { parseSystemAgent } from '@/server/globalConfig/parseSystemAgent';
 import { type GlobalServerConfig } from '@/types/serverConfig';
@@ -96,6 +97,17 @@ export const getServerGlobalConfig = async () => {
     ),
     enableMessageChannels: agentEnv.ENABLE_MESSAGE_CHANNELS,
     enableUploadFileToServer: !!fileEnv.S3_SECRET_ACCESS_KEY,
+    enableVisualUnderstanding: !!(
+      toolsEnv.VISUAL_UNDERSTANDING_PROVIDER && toolsEnv.VISUAL_UNDERSTANDING_MODEL
+    ),
+    ...(toolsEnv.VISUAL_UNDERSTANDING_PROVIDER && toolsEnv.VISUAL_UNDERSTANDING_MODEL
+      ? {
+          visualUnderstanding: {
+            model: toolsEnv.VISUAL_UNDERSTANDING_MODEL,
+            provider: toolsEnv.VISUAL_UNDERSTANDING_PROVIDER,
+          },
+        }
+      : undefined),
 
     // Expose Agent Gateway URL to client when queue-based agent runtime is enabled
     ...(appEnv.enableQueueAgentRuntime && appEnv.AGENT_GATEWAY_URL

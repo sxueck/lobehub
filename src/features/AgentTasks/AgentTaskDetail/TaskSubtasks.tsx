@@ -1,14 +1,15 @@
 import type { TaskDetailSubtask } from '@lobechat/types';
 import { ActionIcon, Block, Flexbox, Icon, showContextMenu, Text } from '@lobehub/ui';
-import { Button, ConfigProvider, Tree } from 'antd';
+import { App, Button, ConfigProvider, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { cssVar } from 'antd-style';
-import { ChevronDown, ListTodoIcon, Plus } from 'lucide-react';
+import { ChevronDown, ListTodoIcon, PlayCircle, Plus } from 'lucide-react';
 import type { Key, MouseEvent } from 'react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { taskService } from '@/services/task';
 import { useTaskStore } from '@/store/task';
 import { taskDetailSelectors } from '@/store/task/selectors';
 
@@ -22,6 +23,7 @@ import TaskTriggerTag from '../features/TaskTriggerTag';
 import { useTaskContextMenuActions } from '../features/useTaskItemContextMenu';
 import AccordionArrowIcon from '../shared/AccordionArrowIcon';
 import { styles } from '../shared/style';
+import RunSubtasksPreview from './RunSubtasksPreview';
 
 type TaskStatus = 'backlog' | 'canceled' | 'completed' | 'failed' | 'paused' | 'running';
 
@@ -42,38 +44,11 @@ interface TaskTreeNode {
   task: TaskDetailSubtask;
 }
 
-const buildTree = (subtasks: TaskDetailSubtask[]): TaskTreeNode[] => {
-  if (subtasks.some((item) => (item.children?.length ?? 0) > 0)) {
-    return subtasks.map((task) => ({
-      children: buildTree(task.children ?? []),
-      task,
-    }));
-  }
-
-  const nodeMap = new Map(
-    subtasks.map((task) => [
-      task.identifier,
-      { children: [] as TaskTreeNode[], task } satisfies TaskTreeNode,
-    ]),
-  );
-  const roots: TaskTreeNode[] = [];
-
-  for (const task of subtasks) {
-    const node = nodeMap.get(task.identifier);
-    if (!node) continue;
-
-    const parentIdentifier = task.blockedBy;
-    const parent = parentIdentifier ? nodeMap.get(parentIdentifier) : undefined;
-    if (parent && parent.task.identifier !== task.identifier) {
-      parent.children.push(node);
-      continue;
-    }
-
-    roots.push(node);
-  }
-
-  return roots;
-};
+const buildTree = (subtasks: TaskDetailSubtask[]): TaskTreeNode[] =>
+  subtasks.map((task) => ({
+    children: buildTree(task.children ?? []),
+    task,
+  }));
 
 const SubtaskTitle = memo<{ task: TaskDetailSubtask }>(({ task }) => {
   const status = toTaskStatus(task.status);
@@ -86,7 +61,7 @@ const SubtaskTitle = memo<{ task: TaskDetailSubtask }>(({ task }) => {
       align="center"
       gap={8}
       justify="space-between"
-      style={{ lineHeight: 1, minWidth: 0, overflow: 'hidden', width: '100%' }}
+      style={{ minWidth: 0, width: '100%' }}
     >
       <span
         style={{ alignItems: 'center', display: 'inline-flex', flex: 'none' }}
@@ -114,6 +89,7 @@ const SubtaskTitle = memo<{ task: TaskDetailSubtask }>(({ task }) => {
           onClick={(e) => e.stopPropagation()}
         >
           <TaskTriggerTag
+            automationMode={task.automationMode}
             heartbeatInterval={task.heartbeat?.interval}
             schedulePattern={task.schedule?.pattern}
             scheduleTimezone={task.schedule?.timezone}
@@ -150,15 +126,18 @@ const toTreeData = (tree: TaskTreeNode[]): DataNode[] => {
 
 const TaskSubtasks = memo(() => {
   const { t } = useTranslation('chat');
+  const { message, modal } = App.useApp();
   const navigate = useNavigate();
   const agentId = useTaskStore(taskDetailSelectors.activeTaskAgentId);
   const subtasks = useTaskStore(taskDetailSelectors.activeTaskSubtasks);
   const taskId = useTaskStore(taskDetailSelectors.activeTaskId);
+  const runReadySubtasks = useTaskStore((s) => s.runReadySubtasks);
 
   const { buildItems, installKeyboardHandlers } = useTaskContextMenuActions();
 
   const [isCreating, setIsCreating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isPlanning, setIsPlanning] = useState(false);
 
   const handleNavigate = useCallback(
     (identifier: string) => {
@@ -207,6 +186,60 @@ const TaskSubtasks = memo(() => {
 
   const toggleCreating = useCallback(() => setIsCreating((prev) => !prev), []);
 
+  const handleRunAll = useCallback(async () => {
+    if (!taskId || isPlanning) return;
+    setIsPlanning(true);
+    try {
+      const preview = await taskService.previewSubtaskLayers(taskId);
+      const plan = preview.data;
+
+      // No runnable layer AND nothing informative to show → just a toast.
+      // If there are externally-blocked or cycled tasks, still open the modal
+      // so the user understands why "Run all" can't start anything right now.
+      const hasInformativeState =
+        plan.blockedExternally.length > 0 ||
+        plan.blockedByCycle.length > 0 ||
+        plan.cycles.length > 0;
+      if (plan.totalRunnable === 0 && !hasInformativeState) {
+        message.info(t('taskDetail.runAll.empty'));
+        return;
+      }
+
+      const canRun = plan.totalRunnable > 0;
+      modal.confirm({
+        cancelText: t('taskDetail.runAll.cancel'),
+        centered: true,
+        content: <RunSubtasksPreview plan={plan} />,
+        okButtonProps: canRun ? undefined : { disabled: true },
+        okText: t('taskDetail.runAll.confirm', { count: plan.totalRunnable }),
+        onOk: async () => {
+          if (!canRun) return;
+          const res = await runReadySubtasks(taskId);
+          const kicked = res.data.kickedOff.length;
+          const failed = res.data.failed?.length ?? 0;
+          if (failed > 0) {
+            message.warning(
+              t('taskDetail.runAll.partialFailure', {
+                failed,
+                ok: kicked,
+                total: kicked + failed,
+              }),
+            );
+          } else {
+            message.success(t('taskDetail.runAll.kickedOff', { count: kicked }));
+          }
+        },
+        title: t('taskDetail.runAll.title'),
+        width: 520,
+      });
+    } catch (error) {
+      console.error('[TaskSubtasks] Failed to plan subtasks:', error);
+      message.error(t('taskDetail.updateFailed'));
+    } finally {
+      setIsPlanning(false);
+    }
+  }, [taskId, isPlanning, message, modal, t, runReadySubtasks]);
+
   if (!taskId) return null;
 
   const hasSubtasks = subtasks.length > 0;
@@ -243,12 +276,22 @@ const TaskSubtasks = memo(() => {
                 onSubtaskClick={handleNavigate}
               />
             </Flexbox>
-            <ActionIcon
-              icon={Plus}
-              size="small"
-              title={t('taskDetail.addSubtask')}
-              onClick={toggleCreating}
-            />
+            <Flexbox horizontal align="center" gap={4}>
+              <ActionIcon
+                disabled={isPlanning}
+                icon={PlayCircle}
+                loading={isPlanning}
+                size="small"
+                title={t('taskDetail.runAll')}
+                onClick={handleRunAll}
+              />
+              <ActionIcon
+                icon={Plus}
+                size="small"
+                title={t('taskDetail.addSubtask')}
+                onClick={toggleCreating}
+              />
+            </Flexbox>
           </Flexbox>
           {isExpanded && (
             <>

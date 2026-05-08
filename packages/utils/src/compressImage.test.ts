@@ -7,13 +7,9 @@ import compressImage, {
   MAX_IMAGE_SIZE,
 } from './compressImage';
 
-const drawImageSpy = vi.fn();
-const getContextSpy = vi
-  .spyOn(global.HTMLCanvasElement.prototype, 'getContext')
-  .mockReturnValue({ drawImage: drawImageSpy } as unknown as CanvasRenderingContext2D);
-const toDataURLSpy = vi
-  .spyOn(global.HTMLCanvasElement.prototype, 'toDataURL')
-  .mockImplementation((type = 'image/png') => `data:${type};base64,mock`);
+const getContextSpy = vi.spyOn(global.HTMLCanvasElement.prototype, 'getContext');
+const drawImageSpy = vi.spyOn(CanvasRenderingContext2D.prototype, 'drawImage');
+const toDataURLSpy = vi.spyOn(global.HTMLCanvasElement.prototype, 'toDataURL');
 
 beforeEach(() => {
   getContextSpy.mockClear();

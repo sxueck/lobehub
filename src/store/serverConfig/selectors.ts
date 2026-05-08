@@ -16,7 +16,10 @@ export const serverConfigSelectors = {
     s.serverConfig.enableMarketTrustedClient || false,
   enableMessageChannels: (s: ServerConfigStore) => s.serverConfig.enableMessageChannels ?? true,
   enableUploadFileToServer: (s: ServerConfigStore) => s.serverConfig.enableUploadFileToServer,
+  enableVisualUnderstanding: (s: ServerConfigStore) =>
+    s.serverConfig.enableVisualUnderstanding || false,
   enabledTelemetryChat: (s: ServerConfigStore) => s.serverConfig.telemetry.langfuse || false,
   isMobile: (s: ServerConfigStore) => s.isMobile || false,
   oAuthSSOProviders: (s: ServerConfigStore) => s.serverConfig.oAuthSSOProviders,
+  visualUnderstanding: (s: ServerConfigStore) => s.serverConfig.visualUnderstanding,
 };
