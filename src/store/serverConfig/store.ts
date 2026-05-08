@@ -16,7 +16,7 @@ import { flattenActions } from '../utils/flattenActions';
 import { type ServerConfigAction } from './action';
 import { createServerConfigSlice } from './action';
 
-interface ServerConfigState {
+export interface ServerConfigState {
   billboard?: GlobalBillboard | null;
   featureFlags: IFeatureFlagsState;
   isMobile?: boolean;
@@ -83,7 +83,8 @@ export const createServerConfigStore = (initState?: Partial<ServerConfigStore>) 
   return store;
 };
 
-export const getServerConfigStoreState = () => store?.getState() || initialState;
+export const getServerConfigStoreState = (): ServerConfigStore =>
+  (store?.getState() || initialState) as ServerConfigStore;
 
 export const { useStore: useServerConfigStore, Provider } =
   createContext<StoreApiWithSelector<ServerConfigStore>>();

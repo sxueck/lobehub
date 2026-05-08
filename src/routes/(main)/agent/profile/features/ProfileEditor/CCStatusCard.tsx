@@ -34,6 +34,7 @@ const useStyles = createStyles(({ css, token }) => ({
 const CCStatusCard = memo(() => {
   const { t } = useTranslation('setting');
   const { styles } = useStyles();
+  const displayName = 'Claude Code';
   const [status, setStatus] = useState<ToolStatus | undefined>();
   const [auth, setAuth] = useState<ClaudeAuthStatus | null>(null);
   const [detecting, setDetecting] = useState(true);
@@ -74,7 +75,7 @@ const CCStatusCard = memo(() => {
       return (
         <Flexbox horizontal align="center" gap={8}>
           <Icon spin icon={Loader2Icon} size={16} style={{ opacity: 0.6 }} />
-          <Text type="secondary">{t('ccStatus.detecting')}</Text>
+          <Text type="secondary">{t('heterogeneousStatus.detecting', { name: displayName })}</Text>
         </Flexbox>
       );
     }
@@ -83,7 +84,9 @@ const CCStatusCard = memo(() => {
       return (
         <Flexbox horizontal align="center" gap={8}>
           <Icon color="var(--ant-color-error)" icon={XCircle} size={16} />
-          <Text type="secondary">{t('ccStatus.unavailable')}</Text>
+          <Text type="secondary">
+            {t('heterogeneousStatus.unavailable', { name: displayName })}
+          </Text>
         </Flexbox>
       );
     }
@@ -116,7 +119,7 @@ const CCStatusCard = memo(() => {
 
     return (
       <Flexbox horizontal align="center" gap={8} style={{ flexWrap: 'wrap' }}>
-        <Text className={styles.label}>{t('ccStatus.account.label')}</Text>
+        <Text className={styles.label}>{t('heterogeneousStatus.account.label')}</Text>
         {auth.email && <Text ellipsis>{auth.email}</Text>}
         {auth.subscriptionType && (
           <Tag color="gold" style={{ marginInlineEnd: 0 }}>
@@ -130,8 +133,8 @@ const CCStatusCard = memo(() => {
   return (
     <Flexbox className={styles.card} gap={8} style={{ marginBottom: 12 }}>
       <Flexbox horizontal align="center" gap={8} justify="space-between">
-        <Text strong>{t('ccStatus.title')}</Text>
-        <Tooltip title={t('ccStatus.redetect')}>
+        <Text strong>{`${displayName} CLI`}</Text>
+        <Tooltip title={t('heterogeneousStatus.redetect')}>
           <ActionIcon
             disabled={detecting}
             icon={RefreshCw}

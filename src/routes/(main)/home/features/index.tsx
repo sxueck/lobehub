@@ -3,7 +3,7 @@
 import { Flexbox } from '@lobehub/ui';
 import { memo } from 'react';
 
-import RecommendTaskTemplates from '@/business/client/RecommendTaskTemplates';
+import { RecommendTaskTemplates } from '@/business/client/RecommendTaskTemplates';
 import DailyBrief from '@/features/DailyBrief';
 import { useHomeStore } from '@/store/home';
 import { useUserStore } from '@/store/user';

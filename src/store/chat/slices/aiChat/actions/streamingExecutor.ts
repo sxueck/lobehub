@@ -38,7 +38,7 @@ import {
   notifyDesktopHumanApprovalRequired,
   resolveNotificationNavigatePath,
 } from '@/store/chat/utils/desktopNotification';
-import { getServerConfigStoreState, serverConfigSelectors } from '@/store/serverConfig';
+import { getServerConfigStoreState } from '@/store/serverConfig';
 import { getTaskStoreState } from '@/store/task';
 import { pageAgentRuntime } from '@/store/tool/slices/builtin/executors/lobe-page-agent';
 import { type StoreSetter } from '@/store/types';
@@ -183,7 +183,7 @@ export class StreamingExecutorActionImpl {
     const visualMediaAvailability = getVisualMediaAvailability(messages);
     const serverConfigState = getServerConfigStoreState();
     const visualUnderstandingConfigured =
-      !!serverConfigState && serverConfigSelectors.enableVisualUnderstanding(serverConfigState);
+      serverConfigState.serverConfig.enableVisualUnderstanding || false;
     const shouldEnableVisualUnderstanding =
       visualUnderstandingConfigured &&
       ((visualMediaAvailability.hasImages &&

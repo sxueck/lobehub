@@ -7,7 +7,9 @@ import Page from './index';
 const useClientDataSWR = vi.fn();
 
 vi.mock('@lobehub/ui', () => ({
-  Avatar: ({ avatar, children }: { avatar?: ReactNode; children?: ReactNode }) => <div>{avatar || children}</div>,
+  Avatar: ({ avatar, children }: { avatar?: ReactNode; children?: ReactNode }) => (
+    <div>{avatar || children}</div>
+  ),
   Empty: ({ description }: { description?: ReactNode }) => <div>{description}</div>,
   Flexbox: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   FormGroup: ({ children, title }: { children?: ReactNode; title?: ReactNode }) => (
@@ -38,7 +40,9 @@ vi.mock('@/components/InlineTable', () => ({
             <div key={column.key}>
               <span>{column.title}</span>
               <div>
-                {column.render ? column.render(record[column.dataIndex], record) : record[column.dataIndex]}
+                {column.render
+                  ? column.render(record[column.dataIndex], record)
+                  : String(record[column.dataIndex] ?? '')}
               </div>
             </div>
           ))}
@@ -66,7 +70,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) =>
       (
-        {
+        ({
           'admin.desc': 'Review all registered users in the current deployment.',
           'admin.users.empty': 'No users found',
           'admin.users.loadFailed': 'Failed to load user list',
@@ -74,7 +78,7 @@ vi.mock('react-i18next', () => ({
           'admin.users.searchPlaceholder': 'Search by name, email, username, or user ID',
           'admin.users.title': 'All Users',
           'tab.admin': 'Admin',
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] || key,
   }),
 }));
@@ -85,7 +89,11 @@ describe('settings admin page', () => {
   });
 
   it('should reset the applied keyword when the search input is cleared', async () => {
-    useClientDataSWR.mockReturnValue({ data: { total: 0, users: [] }, error: undefined, isLoading: false });
+    useClientDataSWR.mockReturnValue({
+      data: { total: 0, users: [] },
+      error: undefined,
+      isLoading: false,
+    });
 
     render(<Page />);
 
