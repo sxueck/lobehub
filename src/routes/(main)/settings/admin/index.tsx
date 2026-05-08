@@ -1,8 +1,8 @@
 'use client';
 
 import { Avatar, Empty, Flexbox, FormGroup } from '@lobehub/ui';
+import type { TableColumnType, TableProps } from 'antd';
 import { Alert, Input } from 'antd';
-import type { TableColumnType } from 'antd';
 import { createStaticStyles, cssVar } from 'antd-style';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -227,7 +227,7 @@ const Page = () => {
       dataIndex: 'fullName',
       key: 'fullName',
       render: (_, record) => (
-        <Flexbox align={'center'} gap={12} horizontal>
+        <Flexbox horizontal align={'center'} gap={12}>
           <Avatar avatar={record.avatar || getUserInitial(record)} size={36} />
           <Flexbox gap={2}>
             <span className={styles.userName}>{getUserDisplayName(record)}</span>
@@ -288,6 +288,9 @@ const Page = () => {
             <Input.Search
               allowClear
               enterButton={t('admin.users.searchButton')}
+              placeholder={t('admin.users.searchPlaceholder')}
+              size={'large'}
+              value={draftKeyword}
               onChange={(event) => {
                 const nextKeyword = event.target.value;
 
@@ -302,23 +305,21 @@ const Page = () => {
                 setKeyword(value.trim());
                 setPage(1);
               }}
-              placeholder={t('admin.users.searchPlaceholder')}
-              size={'large'}
-              value={draftKeyword}
             />
           </div>
         </div>
 
-        {error ? <Alert message={t('admin.users.loadFailed')} showIcon type={'error'} /> : null}
+        {error ? <Alert showIcon message={t('admin.users.loadFailed')} type={'error'} /> : null}
 
         {!error && !isLoading && !data?.users.length ? (
           <Empty description={t('admin.users.empty')} />
         ) : (
           <div className={styles.tableWrap}>
             <InlineTable
-              columns={columns}
+              columns={columns as TableProps['columns']}
               dataSource={data?.users || []}
               loading={isLoading}
+              rowKey={(record) => record.id}
               pagination={{
                 current: page,
                 onChange: (nextPage, nextPageSize) => {
@@ -329,7 +330,6 @@ const Page = () => {
                 showSizeChanger: true,
                 total: data?.total || 0,
               }}
-              rowKey={(record) => record.id}
             />
           </div>
         )}

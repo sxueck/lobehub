@@ -19,10 +19,10 @@ import { type SWRResponse } from 'swr';
 import { mutate, useClientDataSWR } from '@/libs/swr';
 import { aiProviderService } from '@/services/aiProvider';
 import { type AiInfraStore } from '@/store/aiInfra/store';
+import { getServerConfigStoreState } from '@/store/serverConfig/store';
 import { type StoreSetter } from '@/store/types';
 import { useUserStore } from '@/store/user';
 import { authSelectors } from '@/store/user/selectors';
-import { getServerConfigStoreState } from '@/store/serverConfig/store';
 import {
   type AiProviderDetailItem,
   type AiProviderListItem,
@@ -503,13 +503,16 @@ export class AiProviderActionImpl {
         const serverAiProviderConfig = getServerConfigStoreState().serverConfig.aiProvider || {};
 
         const enabledProviderIds = new Set(
-          DEFAULT_MODEL_PROVIDER_LIST.filter(
-            (provider) => serverAiProviderConfig[provider.id]?.enabled ?? provider.enabled,
-          ).map((provider) => provider.id),
+          DEFAULT_MODEL_PROVIDER_LIST.filter((provider) => {
+            const providerConfig =
+              serverAiProviderConfig[provider.id as keyof typeof serverAiProviderConfig];
+
+            return providerConfig?.enabled ?? provider.enabled;
+          }).map((provider) => provider.id),
         );
 
-        const enabledAiProviders: EnabledProvider[] = DEFAULT_MODEL_PROVIDER_LIST.filter((provider) =>
-          enabledProviderIds.has(provider.id),
+        const enabledAiProviders: EnabledProvider[] = DEFAULT_MODEL_PROVIDER_LIST.filter(
+          (provider) => enabledProviderIds.has(provider.id),
         ).map((item) => ({ id: item.id, name: item.name, source: AiProviderSourceEnum.Builtin }));
 
         const enabledChatAiProviders = enabledAiProviders.filter((provider) => {
