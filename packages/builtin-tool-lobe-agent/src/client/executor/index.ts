@@ -114,10 +114,12 @@ interface VisualSourceMessage {
 }
 
 const getVisualUnderstandingConfig = async () => {
-  const { getServerConfigStoreState } = await import('@/store/serverConfig');
+  const { getServerConfigStoreState, serverConfigSelectors } = await import('@/store/serverConfig');
   const serverConfigState = getServerConfigStoreState();
 
-  return serverConfigState?.serverConfig.visualUnderstanding;
+  return serverConfigState
+    ? serverConfigSelectors.visualUnderstanding(serverConfigState)
+    : undefined;
 };
 
 const createAbortController = (signal?: AbortSignal) => {
