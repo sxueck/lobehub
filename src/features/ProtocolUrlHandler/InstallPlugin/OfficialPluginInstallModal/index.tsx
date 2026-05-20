@@ -25,7 +25,6 @@ const OfficialPluginInstallModal = memo<OfficialPluginInstallModalProps>(
     const { t } = useTranslation(['plugin', 'common']);
     const [loading, setLoading] = useState(false);
 
-    // Fetch MCP plugin details
     const useMcpDetail = useDiscoverStore((s) => s.useFetchMcpDetail);
     const identifier = installRequest?.pluginId || '';
 
@@ -59,14 +58,11 @@ const OfficialPluginInstallModal = memo<OfficialPluginInstallModalProps>(
 
     if (!installRequest) return null;
 
-    // Render content
     const renderContent = () => {
-      // If loading, show skeleton screen
       if (isLoading || !identifier) {
         return <DetailLoading />;
       }
 
-      // If loading failed or no data, show error message
       if (!data) {
         return (
           <Block>

@@ -23,7 +23,6 @@ const CompressedMessageItem = memo<CompressedMessageItemProps>(({ message }) => 
   const agentAvatar = useAgentMeta(message.agentId);
   const { role, children } = message;
 
-  // Render user message
   if (role === 'user') {
     return (
       <Flexbox horizontal gap={8} paddingBlock={4}>
@@ -35,7 +34,6 @@ const CompressedMessageItem = memo<CompressedMessageItemProps>(({ message }) => 
     );
   }
 
-  // Render assistant message (standalone without tools)
   if (role === 'assistant') {
     return (
       <Flexbox horizontal gap={8} paddingBlock={4}>
@@ -52,7 +50,6 @@ const CompressedMessageItem = memo<CompressedMessageItemProps>(({ message }) => 
     );
   }
 
-  // Render assistantGroup (assistant message with tool calls)
   if (role === 'assistantGroup' && children) {
     return (
       <Flexbox horizontal gap={8} paddingBlock={4}>

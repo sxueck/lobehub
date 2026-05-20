@@ -340,12 +340,10 @@ const ChatGroupWizard = memo<ChatGroupWizardProps>(
       const value = event.target.value;
       setInputValue(value);
 
-      // Clear previous timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
-      // Set new timer to update searchTerm after 300ms
       debounceTimerRef.current = setTimeout(() => {
         setSearchTerm(value);
       }, 300);

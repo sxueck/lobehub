@@ -104,7 +104,6 @@ export const GenerationItem = memo<GenerationItemProps>(
       }
     }, [generation.task.error, message, t]);
 
-    // Render corresponding component based on status
     if (generation.task.status === AsyncTaskStatus.Success && generation.asset?.url) {
       const seedTooltip = isSupportSeed
         ? t('generation.actions.applySeed')

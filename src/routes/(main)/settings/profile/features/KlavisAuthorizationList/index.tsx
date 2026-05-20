@@ -17,10 +17,8 @@ const KlavisAuthItem = memo<KlavisAuthItemProps>(({ server }) => {
 
   const removeKlavisServer = useToolStore((s) => s.removeKlavisServer);
 
-  // Get server type configuration (icons, etc.)
   const serverType = KLAVIS_SERVER_TYPES.find((item) => item.identifier === server.identifier);
 
-  // Handle deauthorization
   const handleRevoke = useCallback(() => {
     modal.confirm({
       content: t('profile.authorizations.revoke.description'),
@@ -39,7 +37,6 @@ const KlavisAuthItem = memo<KlavisAuthItemProps>(({ server }) => {
     });
   }, [removeKlavisServer, server.identifier, server.serverName, serverType?.label, t]);
 
-  // Render icon
   const renderIcon = () => {
     if (!serverType) return null;
 

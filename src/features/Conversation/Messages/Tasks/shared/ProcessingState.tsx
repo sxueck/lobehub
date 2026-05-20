@@ -105,13 +105,11 @@ const ProcessingState = memo<ProcessingStateProps>(
     const [progress, setProgress] = useState(5);
     const [elapsedTime, setElapsedTime] = useState(0);
 
-    // Get polling hook and check if there's an active operation polling
     const [useEnablePollingTaskStatus, operations] = useChatStore((s) => [
       s.useEnablePollingTaskStatus,
       s.operations,
     ]);
 
-    // Check if exec_async_task is already polling for this message
     const hasActiveOperationPolling = Object.values(operations).some(
       (op) =>
         op.status === 'running' &&
@@ -119,8 +117,6 @@ const ProcessingState = memo<ProcessingStateProps>(
         op.context?.messageId === messageId,
     );
 
-    // Enable polling only when no active operation is already polling
-    // This handles the case when user refreshes page and exec_async_task is no longer running
     const { data } = useEnablePollingTaskStatus(
       taskDetail.threadId,
       messageId,
@@ -130,7 +126,6 @@ const ProcessingState = memo<ProcessingStateProps>(
     const currentActivity = data?.currentActivity;
     const { totalToolCalls, totalSteps, startedAt } = taskDetail;
 
-    // Calculate initial progress and elapsed time based on startedAt
     useEffect(() => {
       if (startedAt) {
         const startTime = new Date(startedAt).getTime();
@@ -163,7 +158,6 @@ const ProcessingState = memo<ProcessingStateProps>(
       return () => clearInterval(timer);
     }, []);
 
-    // Render current activity text
     const renderActivityText = () => {
       if (!currentActivity) return null;
 

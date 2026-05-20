@@ -16,7 +16,6 @@ const NotebookBody = memo(() => {
   const topicId = useChatStore((s) => s.activeTopicId);
   const { documents, isLoading } = useFetchNotebookDocuments(topicId);
 
-  // Show message when no topic is selected
   if (!topicId) {
     return (
       <Center flex={1} gap={8} paddingBlock={24}>
@@ -25,7 +24,6 @@ const NotebookBody = memo(() => {
     );
   }
 
-  // Show loading state
   if (isLoading) {
     return (
       <Center flex={1}>
@@ -34,7 +32,6 @@ const NotebookBody = memo(() => {
     );
   }
 
-  // Show empty state
   if (documents.length === 0) {
     return (
       <Center flex={1} gap={8} paddingBlock={24}>
@@ -43,7 +40,6 @@ const NotebookBody = memo(() => {
     );
   }
 
-  // Render document list
   return (
     <Flexbox gap={8} height={'100%'} paddingInline={12} style={{ overflow: 'auto' }}>
       {documents.map((doc) => (

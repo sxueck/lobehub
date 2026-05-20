@@ -88,16 +88,13 @@ const PluginItem = memo<PluginItemProps>(({ identifier }) => {
     return getLobehubSkillProviderById(identifier);
   }, [identifier]);
 
-  // Try to get builtin tool info if API returns no data
   const builtinTool = useMemo(() => {
     return builtinTools.find((tool) => tool.identifier === identifier);
   }, [identifier]);
 
-  // Convert built-in tools to plugin detail format
   const data: DiscoverPluginDetail | undefined = useMemo(() => {
     if (apiData) return apiData;
 
-    // Check Klavis tools
     if (klavisTool) {
       return {
         author: 'Klavis',
@@ -116,7 +113,6 @@ const PluginItem = memo<PluginItemProps>(({ identifier }) => {
       };
     }
 
-    // Check LobehubSkill providers
     if (lobehubSkill) {
       return {
         author: lobehubSkill.author,
@@ -135,7 +131,6 @@ const PluginItem = memo<PluginItemProps>(({ identifier }) => {
       };
     }
 
-    // Check builtin tools (like lobe-cloud-sandbox, lobe-memory, etc.)
     if (builtinTool) {
       return {
         author: 'LobeHub',
@@ -200,10 +195,8 @@ const PluginItem = memo<PluginItemProps>(({ identifier }) => {
       </Block>
     );
 
-  // If loading is complete but no data found, don't render anything
   if (!data) return null;
 
-  // Render avatar - use BuiltinToolIcon for built-in tools, Avatar for others
   const renderAvatar = () => {
     if (klavisTool) {
       return <BuiltinToolIcon icon={klavisTool.icon} label={klavisTool.label} />;

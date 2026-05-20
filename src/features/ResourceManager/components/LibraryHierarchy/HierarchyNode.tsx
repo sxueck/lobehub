@@ -297,7 +297,6 @@ export const HierarchyNode = memo<HierarchyNodeProps>(
       );
     }
 
-    // Render as file
     const isActive = selectedKey === itemKey;
     return (
       <Flexbox gap={2}>

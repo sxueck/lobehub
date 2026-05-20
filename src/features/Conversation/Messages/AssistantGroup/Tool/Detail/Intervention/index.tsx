@@ -55,7 +55,6 @@ const Intervention = memo<InterventionProps>(
       [],
     );
 
-    // Handler to be called before approve action - calls all registered callbacks
     const handleBeforeApprove = useCallback(async () => {
       const callbacks = Array.from(beforeApproveCallbacksRef.current.values());
       await Promise.all(callbacks.map((cb) => cb()));

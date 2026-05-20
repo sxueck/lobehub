@@ -194,24 +194,19 @@ const OAuthDeviceFlowAuth = memo<OAuthDeviceFlowAuthProps>(
       }
     }, [deviceCodeInfo?.verificationUri]);
 
-    // Reset hasAutoClosedRef when starting new auth
     useEffect(() => {
       if (state === 'success' && !hasAutoClosedRef.current) {
         hasAutoClosedRef.current = true;
       }
     }, [state]);
 
-    // Render Hero section with provider logo
     const renderHero = () => (
       <div className={styles.hero}>
         <ProviderIcon provider={providerId} size={72} type={'avatar'} />
       </div>
     );
 
-    // Render content based on authentication state
     const renderContent = () => {
-      // Authenticated state - show user info
-      // Show when authenticated and not in the middle of authenticating process
       if (isAuthenticated && !isAuthenticating) {
         return (
           <div className={styles.content}>

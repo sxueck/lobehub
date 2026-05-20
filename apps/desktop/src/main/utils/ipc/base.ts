@@ -29,7 +29,6 @@ export function IpcMethod() {
   };
 }
 
-// Handler registry for IPC methods
 export class IpcHandler {
   private static instance: IpcHandler;
   private registeredChannels = new Set<string>();

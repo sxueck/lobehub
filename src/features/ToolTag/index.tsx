@@ -64,20 +64,15 @@ const ToolTag = memo<ToolTagProps>(({ identifier, variant = 'default' }) => {
   const isDarkMode = useIsDark();
   const isCompact = variant === 'compact';
 
-  // Get local plugin lists
   const builtinList = useToolStore(builtinToolSelectors.metaList, isEqual);
   const installedPluginList = useToolStore(pluginSelectors.installedPluginMetaList, isEqual);
 
-  // Klavis related state
   const allKlavisServers = useToolStore(klavisStoreSelectors.getServers, isEqual);
   const isKlavisEnabledInEnv = useServerConfigStore(serverConfigSelectors.enableKlavis);
 
-  // Check if plugin is installed
   const isInstalled = useToolStore(pluginSelectors.isPluginInstalled(identifier));
 
-  // Try to find in local lists first (including Klavis)
   const localMeta = useMemo(() => {
-    // Check if it's a Klavis server type
     if (isKlavisEnabledInEnv) {
       const klavisType = KLAVIS_SERVER_TYPES.find((type) => type.identifier === identifier);
       if (klavisType) {
@@ -115,14 +110,12 @@ const ToolTag = memo<ToolTagProps>(({ identifier, variant = 'default' }) => {
     return null;
   }, [identifier, builtinList, installedPluginList, isKlavisEnabledInEnv, allKlavisServers]);
 
-  // Fetch from remote if not found locally
   const usePluginDetail = useDiscoverStore((s) => s.usePluginDetail);
   const { data: remoteData, isLoading } = usePluginDetail({
     identifier: !localMeta && !isInstalled ? identifier : undefined,
     withManifest: false,
   });
 
-  // Determine final metadata
   const meta = localMeta || {
     avatar: remoteData?.avatar,
     isInstalled: false,
@@ -132,19 +125,15 @@ const ToolTag = memo<ToolTagProps>(({ identifier, variant = 'default' }) => {
 
   const displayTitle = isLoading ? 'Loading...' : meta.title;
 
-  // Render icon based on type
   const renderIcon = () => {
-    // Klavis type has icon property
     if (meta.type === 'klavis' && 'icon' in meta && 'label' in meta) {
       return <KlavisIcon icon={meta.icon} label={meta.label} />;
     }
 
-    // Builtin type has avatar
     if (meta.type === 'builtin' && 'avatar' in meta && meta.avatar) {
       return <Avatar avatar={meta.avatar} shape={'square'} size={16} style={{ flexShrink: 0 }} />;
     }
 
-    // Plugin type
     if ('avatar' in meta) {
       return <PluginAvatar avatar={meta.avatar} size={16} />;
     }

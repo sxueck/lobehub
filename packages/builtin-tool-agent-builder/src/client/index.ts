@@ -1,4 +1,5 @@
-// Inspector components (customized tool call headers)
+export { AgentBuilderManifest } from '../manifest';
+export * from '../types';
 export { AgentBuilderInspectors } from './Inspector';
 export {
   GetAvailableModelsInspector,
@@ -7,16 +8,6 @@ export {
   UpdateConfigInspector,
   UpdatePromptInspector,
 } from './Inspector';
-
-// Intervention components (interactive editing)
 export { AgentBuilderInterventions } from './Intervention';
-
-// Render components (read-only snapshots)
 export { AgentBuilderRenders } from './Render';
-
-// Streaming components (real-time tool execution feedback)
 export { AgentBuilderStreamings } from './Streaming';
-
-// Re-export types and manifest for convenience
-export { AgentBuilderManifest } from '../manifest';
-export * from '../types';

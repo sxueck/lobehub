@@ -83,13 +83,10 @@ const EditableCell = memo<EditableCellProps>(
     const { t } = useTranslation('auth');
     const { message } = App.useApp();
 
-    // Edit state management
     const [isEditing, setIsEditing] = useState(false);
 
-    // Ref for the Input element
     const inputRef = useRef<InputRef>(null);
 
-    // Format display value
     const formatDisplayValue = (val: string | null) => {
       if (type === 'date' && val) {
         const date = dayjs(val);
@@ -100,14 +97,12 @@ const EditableCell = memo<EditableCellProps>(
       return val || placeholder || '';
     };
 
-    // Start editing
     const handleEdit = () => {
       if (disabled) return;
 
       setIsEditing(true);
     };
 
-    // Submit edit
     const handleSubmit = () => {
       if (type === 'text') {
         const inputValue = inputRef.current?.input?.value;
@@ -123,12 +118,10 @@ const EditableCell = memo<EditableCellProps>(
       setIsEditing(false);
     };
 
-    // Cancel edit
     const handleCancel = () => {
       setIsEditing(false);
     };
 
-    // Keyboard event handler for the input component
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -146,7 +139,6 @@ const EditableCell = memo<EditableCellProps>(
       setIsEditing(false);
     };
 
-    // Render edit mode
     const renderEditMode = () => {
       switch (type) {
         case 'text': {
@@ -204,7 +196,6 @@ const EditableCell = memo<EditableCellProps>(
       return renderEditMode();
     }
 
-    // Display mode
     return (
       <div className={styles.container}>
         <div className={styles.content}>{formatDisplayValue(value)}</div>

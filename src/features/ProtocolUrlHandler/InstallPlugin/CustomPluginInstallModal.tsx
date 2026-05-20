@@ -39,7 +39,6 @@ const CustomPluginInstallModal = memo<CustomPluginInstallModalProps>(
     const testMcpConnection = useToolStore((s) => s.testMcpConnection);
     const togglePlugin = useAgentStore((s) => s.togglePlugin);
 
-    // Generate a unique identifier for custom plugin connection testing
     const identifier = installRequest?.schema?.identifier || '';
     const testState = useToolStore(mcpStoreSelectors.getMCPConnectionTestState(identifier));
 
@@ -48,7 +47,6 @@ const CustomPluginInstallModal = memo<CustomPluginInstallModalProps>(
     const marketplace =
       isMarketplace && marketId ? TRUSTED_MARKETPLACES[marketId as TrustedMarketplaceId] : null;
 
-    // Reset loading state and config
     useEffect(() => {
       if (!installRequest) {
         setLoading(false);
@@ -61,14 +59,12 @@ const CustomPluginInstallModal = memo<CustomPluginInstallModalProps>(
 
       setLoading(true);
       try {
-        // Merge original config with user-updated config
         const finalConfig = {
           ...schema.config,
           env: updatedConfig.env || schema.config.env,
           headers: updatedConfig.headers || schema.config.headers,
         };
 
-        // Custom plugin: test connection first to get the real manifest
         const testParams: McpConnectionParams = {
           connection: finalConfig,
           identifier,
@@ -88,8 +84,6 @@ const CustomPluginInstallModal = memo<CustomPluginInstallModalProps>(
           throw new Error(t('protocolInstall.messages.manifestNotFound'));
         }
 
-        // Third-party marketplace and custom plugins: build custom plugin data
-        // Use the real manifest obtained from connection testing
         const customPlugin: LobeToolCustomPlugin = {
           customParams: {
             avatar: schema.icon,
@@ -133,7 +127,6 @@ const CustomPluginInstallModal = memo<CustomPluginInstallModalProps>(
 
     if (!installRequest || !schema) return null;
 
-    // Render different Alert components based on type
     const renderAlert = () => {
       if (!isMarketplace) {
         return (

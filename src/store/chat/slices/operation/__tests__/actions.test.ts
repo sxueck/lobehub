@@ -366,7 +366,6 @@ describe('Operation Actions', () => {
       // Wait a bit to ensure no async handler calls
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Handler should NOT be called for completed operation
       expect(completedChildHandler).not.toHaveBeenCalled();
     });
 
@@ -986,12 +985,10 @@ describe('Operation Actions', () => {
         result.current.cancelOperation(operationId!);
       });
 
-      // Handler should be called
       await vi.waitFor(() => {
         expect(asyncHandler).toHaveBeenCalledTimes(1);
       });
 
-      // Operation should be marked as cancelled even if handler is still running
       expect(result.current.operations[operationId!].status).toBe('cancelled');
     });
 
@@ -1050,7 +1047,6 @@ describe('Operation Actions', () => {
         result.current.cancelOperation(operationId!);
       });
 
-      // Handler should not be called again
       expect(handler).toHaveBeenCalledTimes(1);
     });
   });

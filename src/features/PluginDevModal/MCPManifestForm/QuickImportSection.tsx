@@ -28,22 +28,18 @@ const QuickImportSection = ({
   const [importError, setImportError] = useState<string | null>(null);
 
   const handleImportConfirm = () => {
-    setImportError(null); // Clear previous import error
-    onClearConnectionError?.(); // Clear connection error
+    setImportError(null);
+    onClearConnectionError?.();
 
-    const value = jsonInput.trim(); // Use the text area input
+    const value = jsonInput.trim();
     if (!value) {
       setImportError(t('dev.mcp.quickImportError.empty'));
       return;
     }
 
-    // Use the existing parseMcpInput function
     const parseResult = parseMcpInput(value);
 
-    // Handle parsing errors from parseMcpInput
     if (parseResult.status === 'error') {
-      // Assuming parseMcpInput returns an error message or code in parseResult
-      // We might need a more specific error message based on parseResult.error
       setImportError(parseResult.errorCode);
       return;
     }
@@ -53,41 +49,32 @@ const QuickImportSection = ({
       return;
     }
 
-    // Extract identifier and mcpConfig from the successful parse result
     const { identifier, mcpConfig } = parseResult;
 
-    // Check for desktop requirement for stdio
     if (!isDesktop && mcpConfig.type === 'stdio') {
       setImportError(t('dev.mcp.stdioNotSupported'));
       return;
     }
 
-    // Check for duplicate identifier (only in create mode)
     if (!isEditMode && pluginIds.includes(identifier)) {
-      // Update form fields even if duplicate, so user sees the pasted values
       form.setFieldsValue({
         customParams: { mcp: mcpConfig },
         identifier,
       });
-      // Trigger validation to show Form.Item error
       form.validateFields(['identifier']);
-      setIsImportModalVisible(false); // Close modal even on duplicate error
-      setJsonInput(''); // Clear modal input
+      setIsImportModalVisible(false);
+      setJsonInput('');
       return;
     }
 
-    // All checks passed, fill the form
     form.setFieldsValue({
       customParams: { mcp: mcpConfig },
       identifier,
     });
 
-    // Clear potential old validation error on identifier field
     form.setFields([{ errors: [], name: 'identifier' }]);
 
-    // Clear modal state and close (or rather, hide the import UI)
     setIsImportModalVisible(false);
-    // setJsonInput(''); // Keep input for potential edits?
     setImportError(null);
   };
 
@@ -99,7 +86,7 @@ const QuickImportSection = ({
           style={{ marginBottom: 16 }} // Add some spacing
           type="dashed"
           onClick={() => {
-            setImportError(null); // Clear previous errors when opening
+            setImportError(null);
             setIsImportModalVisible(true);
           }}
         >

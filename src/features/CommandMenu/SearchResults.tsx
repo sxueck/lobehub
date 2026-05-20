@@ -358,15 +358,12 @@ const SearchResults = memo<SearchResultsProps>(
       return null;
     }
 
-    // Render a single result item with type prefix (like "Message > content")
     const renderResultItem = (result: SearchResult) => {
       const typeLabel = getTypeLabel(result.type);
       const subtitle = getSubtitle(result);
 
-      // Hide type prefix when filtering by specific type
       const showTypePrefix = !typeFilter;
 
-      // Create title with or without type prefix
       const titleWithPrefix = showTypePrefix ? (
         <>
           <span style={{ opacity: 0.5 }}>{typeLabel}</span>
@@ -401,10 +398,8 @@ const SearchResults = memo<SearchResultsProps>(
 
     // Helper to render "Search More" button
     const renderSearchMore = (type: ValidSearchType, count: number) => {
-      // Don't show if already filtering by this type
       if (typeFilter) return null;
 
-      // Show if there are results (might have more)
       if (count === 0) return null;
 
       const typeLabel = getTypeLabel(type);

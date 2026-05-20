@@ -96,34 +96,26 @@ const PluginTag = memo<PluginTagProps>(
     const isDarkMode = useIsDark();
     const { t } = useTranslation('setting');
 
-    // Extract identifier
     const identifier = typeof pluginId === 'string' ? pluginId : pluginId?.identifier;
 
-    // Get local plugin lists - use allMetaList or metaList based on prop
     const builtinList = useToolStore(
       useAllMetaList ? builtinToolSelectors.allMetaList : builtinToolSelectors.metaList,
       isEqual,
     );
     const installedPluginList = useToolStore(pluginSelectors.installedPluginMetaList, isEqual);
 
-    // Klavis-related state
     const allKlavisServers = useToolStore(klavisStoreSelectors.getServers, isEqual);
     const isKlavisEnabledInEnv = useServerConfigStore(serverConfigSelectors.enableKlavis);
 
-    // LobeHub Skill-related state
     const allLobehubSkillServers = useToolStore(lobehubSkillStoreSelectors.getServers, isEqual);
     const isLobehubSkillEnabled = useServerConfigStore(serverConfigSelectors.enableLobehubSkill);
 
-    // Check if plugin is installed
     const isInstalled = useToolStore(pluginSelectors.isPluginInstalled(identifier));
 
-    // Try to find in local lists first (including Klavis and LobehubSkill)
     const localMeta = useMemo(() => {
-      // Check if it's a Klavis server type
       if (isKlavisEnabledInEnv) {
         const klavisType = KLAVIS_SERVER_TYPES.find((type) => type.identifier === identifier);
         if (klavisType) {
-          // Check if this Klavis server is connected
           const connectedServer = allKlavisServers.find((s) => s.identifier === identifier);
           return {
             availableInWeb: true,
@@ -136,11 +128,9 @@ const PluginTag = memo<PluginTagProps>(
         }
       }
 
-      // Check if it's a LobeHub Skill provider
       if (isLobehubSkillEnabled) {
         const lobehubSkillProvider = LOBEHUB_SKILL_PROVIDERS.find((p) => p.id === identifier);
         if (lobehubSkillProvider) {
-          // Check if this LobehubSkill provider is connected
           const connectedServer = allLobehubSkillServers.find((s) => s.identifier === identifier);
           return {
             availableInWeb: true,
@@ -198,7 +188,6 @@ const PluginTag = memo<PluginTagProps>(
       withManifest: false,
     });
 
-    // Determine final metadata
     const meta = localMeta || {
       availableInWeb: true,
       avatar: remoteData?.avatar,
@@ -207,38 +196,30 @@ const PluginTag = memo<PluginTagProps>(
       type: 'plugin' as const,
     };
 
-    // Use identifier as title when loading, otherwise use meta.title
     const displayTitle = meta.title;
     const isDesktopOnly = showDesktopOnlyLabel && !meta.availableInWeb;
 
-    // Render icon based on type
     const renderIcon = () => {
-      // Show loading spinner when loading
       if (isLoading) {
         return <Loader2 className={styles.loadingIcon} size={14} />;
       }
 
-      // Show warning icon when not installed
       if (!meta.isInstalled) {
         return <AlertCircle className={styles.warningIcon} size={14} />;
       }
 
-      // Klavis type has icon property
       if (meta.type === 'klavis' && 'icon' in meta && 'label' in meta) {
         return <KlavisIcon icon={meta.icon} label={meta.label} />;
       }
 
-      // LobeHub Skill type has icon property
       if (meta.type === 'lobehub-skill' && 'icon' in meta && 'label' in meta) {
         return <LobehubSkillIcon icon={meta.icon} label={meta.label} />;
       }
 
-      // Builtin type has avatar
       if (meta.type === 'builtin' && 'avatar' in meta && meta.avatar) {
         return <Avatar avatar={meta.avatar} shape={'square'} size={16} style={{ flexShrink: 0 }} />;
       }
 
-      // Plugin type
       if ('avatar' in meta) {
         return <PluginAvatar avatar={meta.avatar} size={16} />;
       }
@@ -246,20 +227,17 @@ const PluginTag = memo<PluginTagProps>(
       return null;
     };
 
-    // Build display text
     const getDisplayText = () => {
       let text = displayTitle;
       if (isDesktopOnly) {
         text += ` (${t('tools.desktopOnly', { defaultValue: 'Desktop Only' })})`;
       }
-      // Don't show "Not Installed" when loading
       if (!meta.isInstalled && !isLoading) {
         text += ` (${t('tools.notInstalled', { defaultValue: 'Not Installed' })})`;
       }
       return text;
     };
 
-    // Only show error state when not installed and not loading
     const showErrorState = !meta.isInstalled && !isLoading;
 
     return (

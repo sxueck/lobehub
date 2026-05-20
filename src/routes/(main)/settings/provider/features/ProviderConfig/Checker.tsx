@@ -107,13 +107,11 @@ const Checker = memo<ConnectionCheckerProps>(
 
     const [error, setError] = useState<ChatMessageError | undefined>();
 
-    // Sync checkModel state when model prop changes
     useEffect(() => {
       setCheckModel(model);
     }, [model]);
 
     const checkConnection = async () => {
-      // Clear previous check results immediately
       setPass(false);
       setError(undefined);
 
@@ -191,13 +189,10 @@ const Checker = memo<ConnectionCheckerProps>(
               overflow: 'hidden',
             }}
             onSelect={async (value) => {
-              // Update local state
               setCheckModel(value);
               setPass(false);
               setError(undefined);
 
-              // Persist the selected model to provider config
-              // This allows the model to be retained after page refresh
               await updateAiProviderConfig(provider, { checkModel: value });
             }}
           />

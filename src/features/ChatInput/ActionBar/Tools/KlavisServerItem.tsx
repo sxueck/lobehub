@@ -49,11 +49,9 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
     const createKlavisServer = useToolStore((s) => s.createKlavisServer);
     const refreshKlavisServerTools = useToolStore((s) => s.refreshKlavisServerTools);
 
-    // Get effective agent ID (agentId prop or current active agent)
     const activeAgentId = useAgentStore((s) => s.activeAgentId);
     const effectiveAgentId = agentId || activeAgentId || '';
 
-    // Clean up all timers
     const cleanup = useCallback(() => {
       if (windowCheckIntervalRef.current) {
         clearInterval(windowCheckIntervalRef.current);
@@ -71,14 +69,12 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
       setIsWaitingAuth(false);
     }, []);
 
-    // Clean up on component unmount
     useEffect(() => {
       return () => {
         cleanup();
       };
     }, [cleanup]);
 
-    // Stop all listeners when server status becomes CONNECTED
     useEffect(() => {
       if (server?.status === KlavisServerStatus.CONNECTED && isWaitingAuth) {
         cleanup();
@@ -90,10 +86,8 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
      */
     const startFallbackPolling = useCallback(
       (serverName: string) => {
-        // Already polling, don't start again
         if (pollIntervalRef.current) return;
 
-        // Poll once per second
         pollIntervalRef.current = setInterval(async () => {
           try {
             await refreshKlavisServerTools(serverName);
@@ -102,7 +96,6 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
           }
         }, POLL_INTERVAL_MS);
 
-        // Stop after 15-second timeout
         pollTimeoutRef.current = setTimeout(() => {
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
@@ -119,19 +112,15 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
      */
     const startWindowMonitor = useCallback(
       (oauthWindow: Window, serverName: string) => {
-        // Check window state every 500ms
         windowCheckIntervalRef.current = setInterval(() => {
           try {
-            // Try to access window.closed (may be blocked by COOP)
             if (oauthWindow.closed) {
-              // Window closed, clean up listeners and check auth status
               if (windowCheckIntervalRef.current) {
                 clearInterval(windowCheckIntervalRef.current);
                 windowCheckIntervalRef.current = null;
               }
               oauthWindowRef.current = null;
 
-              // Start polling to check auth status after window closes
               startFallbackPolling(serverName);
             }
           } catch {
@@ -153,31 +142,26 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
      */
     const openOAuthWindow = useCallback(
       (oauthUrl: string, serverName: string) => {
-        // Clean up previous state
         cleanup();
         setIsWaitingAuth(true);
 
-        // Open OAuth window
         const oauthWindow = window.open(oauthUrl, '_blank', 'width=600,height=700');
         if (oauthWindow) {
           oauthWindowRef.current = oauthWindow;
           startWindowMonitor(oauthWindow, serverName);
         } else {
-          // Window blocked, use polling directly
           startFallbackPolling(serverName);
         }
       },
       [cleanup, startWindowMonitor, startFallbackPolling, t],
     );
 
-    // Get plugin ID for this server (use identifier as pluginId)
     const pluginId = server ? server.identifier : '';
     const plugins =
       useAgentStore(agentSelectors.getAgentConfigById(effectiveAgentId))?.plugins || [];
     const checked = plugins.includes(pluginId);
     const updateAgentConfigById = useAgentStore((s) => s.updateAgentConfigById);
 
-    // Toggle plugin for the effective agent
     const togglePlugin = useCallback(
       async (pluginIdToToggle: string) => {
         if (!effectiveAgentId) return;
@@ -209,15 +193,12 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
         });
 
         if (newServer) {
-          // Auto-enable plugin after installation (using identifier)
           const newPluginId = newServer.identifier;
           await togglePlugin(newPluginId);
 
-          // If already authenticated, refresh tool list directly, skip OAuth
           if (newServer.isAuthenticated) {
             await refreshKlavisServerTools(newServer.identifier);
           } else if (newServer.oauthUrl) {
-            // Need OAuth, open OAuth window and monitor close
             openOAuthWindow(newServer.oauthUrl, newServer.identifier);
           }
         }
@@ -235,9 +216,7 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
       setIsToggling(false);
     };
 
-    // Render right-side controls
     const renderRightControl = () => {
-      // Connecting in progress
       if (isConnecting) {
         return (
           <Flexbox horizontal align="center" gap={4} onClick={stopPropagation}>
@@ -246,7 +225,6 @@ const KlavisServerItem = memo<KlavisServerItemProps>(
         );
       }
 
-      // Not connected, show Connect button
       if (!server) {
         return (
           <Flexbox

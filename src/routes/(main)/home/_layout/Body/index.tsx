@@ -93,7 +93,6 @@ const Body = memo(() => {
     [t, hideSection],
   );
 
-  // Build a map of nav link items by key
   const navLinkItems = useMemo(() => {
     const map = new Map<string, NavItemType>();
     for (const item of topNavItems) map.set(item.key, item);
@@ -162,8 +161,6 @@ const Body = memo(() => {
     [sidebarExpandedKeys, updateSystemStatus],
   );
 
-  // Render the flat list: group consecutive accordion items into an Accordion,
-  // interleave non-accordion keys as nav links.
   const content = useMemo(() => {
     const renderSection = (keys: string[], section: 'bottom' | 'top') => {
       const elements: ReactElement[] = [];

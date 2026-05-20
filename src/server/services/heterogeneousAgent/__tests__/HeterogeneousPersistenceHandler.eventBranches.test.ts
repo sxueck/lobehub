@@ -469,7 +469,6 @@ describe('HeterogeneousPersistenceHandler — event branch coverage', () => {
           toolCallId: 'tc-never-seen',
         }),
       ]);
-      // Handler swallows unknown ids — no crash, no DB write
       expect(h.messageModel.updateToolMessage).not.toHaveBeenCalled();
     });
 
