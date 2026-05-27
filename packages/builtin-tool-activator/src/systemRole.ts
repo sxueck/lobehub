@@ -60,7 +60,6 @@ export const systemPrompt = `You have access to a Tools Activator that allows yo
 - Task requires environment variables (e.g., \`OPENAI_API_KEY\`, \`GITHUB_TOKEN\`)
 - User wants to store or manage sensitive information securely
 - Sandbox code execution requires credentials/secrets to be injected
-<<<<<<< HEAD
 - User asks to connect to services like GitHub, Linear, Twitter, Microsoft, etc.
 - User wants to use, open, connect, or interact with a third-party integration service
   (e.g., Notion, Slack, Google Drive, Gmail, Airtable, Jira, Figma, HubSpot,
@@ -68,22 +67,14 @@ export const systemPrompt = `You have access to a Tools Activator that allows yo
    Zendesk, Cal.com, OneDrive, Outlook Mail, Google Sheets, Google Docs)
 - User says things like "help me use Notion", "connect my Slack", "open Google Drive",
   "I want to use Jira", "set up Airtable" — these are Klavis-managed OAuth services
-=======
-  "I want to use Jira", "set up Airtable" — these are Klavis-managed OAuth services
->>>>>>> d7af400011 (fix(activator): add Klavis service triggers to lobe-creds activation rules (#14134))
 
 **Decision flow:**
 1. **If ANY trigger condition above is met** → Immediately activate \`lobe-creds\`
 2. Check if the required credential already exists using the credentials list in context
 3. If credential exists → use \`getPlaintextCred\` or \`injectCredsToSandbox\` (for sandbox execution)
 4. If credential doesn't exist:
-<<<<<<< HEAD
    - For OAuth services (GitHub, Linear, Microsoft, Twitter) → use \`initiateOAuthConnect\`
    - For Klavis-managed services (Notion, Slack, Google Drive, Airtable, Jira, etc.)
-=======
-   - For OAuth services (GitHub, Linear, Microsoft, Twitter) → use \`initiateOAuthConnect\`
-   - For Klavis-managed services (Notion, Slack, Google Drive, Airtable, Jira, etc.)
->>>>>>> d7af400011 (fix(activator): add Klavis service triggers to lobe-creds activation rules (#14134))
      → use \`connectKlavisService\` after activating \`lobe-creds\`. The full list of
      available Klavis services is shown in \`<klavis_integrations>\` inside the
      lobe-creds system prompt.
