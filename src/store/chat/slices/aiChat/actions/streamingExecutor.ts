@@ -28,11 +28,9 @@ import { type ResolvedAgentConfig } from '@/services/chat/mecha';
 import { composeEnabledTools, resolveAgentConfig } from '@/services/chat/mecha';
 import { localFileService } from '@/services/electron/localFileService';
 import { messageService } from '@/services/message';
-import { aiModelSelectors, getAiInfraStoreState } from '@/store/aiInfra';
 import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
-import { aiModelSelectors } from '@/store/aiInfra/selectors';
-import { getAiInfraStoreState } from '@/store/aiInfra/store';
+import { aiModelSelectors, getAiInfraStoreState } from '@/store/aiInfra';
 import { createAgentExecutors } from '@/store/chat/agents/createAgentExecutors';
 import { emitClientAgentSignalSourceEvent } from '@/store/chat/slices/aiChat/actions/agentSignalBridge';
 import { type OperationStatus } from '@/store/chat/slices/operation/types';
@@ -597,11 +595,6 @@ export class StreamingExecutorActionImpl {
     const contextWindowTokens = aiModelSelectors.modelContextWindowTokens(
       model,
       provider!,
-    )(getAiInfraStoreState());
-
-    const contextWindowTokens = aiModelSelectors.modelContextWindowTokens(
-      agentConfigData.model,
-      agentConfigData.provider!,
     )(getAiInfraStoreState());
 
     const agent = new GeneralChatAgent({
